@@ -90,6 +90,7 @@ LazyInjectDep.Counter = 0;
 class LazyInjectResolve
 {
     @LazyInject(LazyInjectDep)
+    // @ts-ignore
     public Instance : LazyInjectDep;
 }
 
@@ -118,14 +119,33 @@ class SampleImplementation2 extends SampleBaseClass{
 class SampleMultipleAutoinject{
 
     @Autoinject(SampleBaseClass)
+    // @ts-ignore
     public Instances : SampleBaseClass[];
 
 
 }
 
+@Singleton()
+// @ts-ignore
+class TestModule{
+    public Initialized = false;
+
+    // tslint:disable-next-line: no-empty
+    public async initialize() {
+        this.Initialized = true;
+    }
+}
+
 describe("Dependency injection", () => {
     beforeEach(() => {
         DI.clear();
+    })
+
+    it("Framework module initialization strategy", async () => {
+        const module = await DI.resolve<TestModule>(TestModule);
+
+        expect(module).to.be.not.null;
+        expect(module.Initialized).to.be.true;
     })
 
     it("Register multiple classes with same base class", async () =>{

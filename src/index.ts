@@ -284,6 +284,20 @@ export interface IResolveStrategy {
   resolve: (target: any, container: Container) => any;
 }
 
+/**
+ * Resolve strategy to initialize framework internal modules.
+ */
+export class FrameworkModuleResolveStrategy implements IResolveStrategy {
+  public async resolve(target: any) {
+    if (target && target.initialize && _.isFunction(target.initialize)) {
+      await target.initialize();
+    }
+
+    return target;
+  }
+}
+
+
 function injectable(callback?: (descriptor: IInjectDescriptor, target: ArrayBuffer, propertyKey: string | symbol, indexOrDescriptor: number | PropertyDescriptor) => void): any {
   return (target: any, propertyKey: string | symbol, indexOrDescriptor: number | PropertyDescriptor) => {
     let descriptor: IInjectDescriptor = target[DI_DESCRIPTION_SYMBOL];
@@ -563,6 +577,9 @@ export namespace DI {
    */
   export const RootContainer = new Container();
 
+  // add modules resolve strategy to proper init
+  RootContainer.ResolveStrategies.push(new FrameworkModuleResolveStrategy());
+  
   /**
    * Clears root container registry and cache.
    */
