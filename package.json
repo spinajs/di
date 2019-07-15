@@ -1,6 +1,6 @@
 {
-  "name": "@spinajs/core",
-  "version": "1.0.0",
+  "name": "@spinajs/di",
+  "version": "1.0.1",
   "description": "lightweight di container ",
   "main": "lib/index.js",
   "scripts": {
