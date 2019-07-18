@@ -159,6 +159,23 @@ class TestInjectContainerAsProperty {
     public container: Container;
 }
 
+
+class BaseInject
+{
+
+}
+
+@Inject(BaseInject)
+// @ts-ignore
+class BaseClass
+{
+    constructor(public baseInject : BaseInject){}
+}
+
+class ChildClass extends BaseClass{
+
+}
+
 describe("Dependency injection", () => {
     beforeEach(() => {
         DI.clear();
@@ -183,6 +200,12 @@ describe("Dependency injection", () => {
         expect(instance.container === child).to.be.true;
         expect(instance2.container === child).to.be.true;
     })
+
+    it("Should inject on base class declaration", async() =>{
+        const instance = await DI.resolve<ChildClass>(ChildClass);
+        expect(instance.baseInject).to.be.not.null;
+        expect(instance.baseInject instanceof  BaseInject).to.be.true;
+    });
 
     it("Framework module initialization strategy", async () => {
         const module = await DI.resolve<TestModule>(TestModule);
