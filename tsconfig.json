@@ -16,11 +16,11 @@
         "declaration": true,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
-        "typeRoots": ["node_modules/@types", "src/typings"]
+        "typeRoots": ["node_modules/@types", "./typings"]
         
     },
     "include": [
-        "src/**/*"
+        "src/**/*","typings/array.d.ts"
     ],
     "exclude": [
         "node_modules"

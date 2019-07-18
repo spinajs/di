@@ -1,10 +1,8 @@
-import 'mocha';
-
+import { ArgumentException } from '@spinajs/exceptions'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
-
-import { ArgumentException } from '@spinajs/exceptions'
-import { Autoinject, Container, DI, Inject, LazyInject, NewInstance, PerChildInstance, Singleton } from './../src/';
+import 'mocha';
+import { Autoinject, Container, DI, Inject, LazyInject, NewInstance, PerChildInstance, Singleton } from '../src/container';
 
 const expect = chai.expect;
 chai.use(chaiAsPromised);
@@ -153,32 +151,46 @@ class TestInjectContainerAsParameter {
 }
 
 class TestInjectContainerAsProperty {
-    
+
     @Autoinject()
     // @ts-ignore
     public container: Container;
 }
 
 
-class BaseInject
-{
+class BaseInject {
 
 }
 
 @Inject(BaseInject)
 // @ts-ignore
-class BaseClass
-{
-    constructor(public baseInject : BaseInject){}
+class BaseClass {
+    constructor(public baseInject: BaseInject) { }
 }
 
-class ChildClass extends BaseClass{
+class ChildClass extends BaseClass {
 
+}
+
+class ThenableClassTest {
+
+    public ThenCalled = false;
+
+    // tslint:disable-next-line: no-empty
+    public then(_: (rows: any[]) => void, __: (err: Error) => void) {
+        this.ThenCalled = true;
+    }
 }
 
 describe("Dependency injection", () => {
     beforeEach(() => {
         DI.clear();
+    })
+
+    it("then func should not be called on class at resolve", async () => {
+        const instance = ((await DI.resolve<ThenableClassTest>(ThenableClassTest)) as any) as ThenableClassTest;
+        expect(instance.ThenCalled).to.be.false;
+
     })
 
     it("Inject container", async () => {
@@ -201,10 +213,10 @@ describe("Dependency injection", () => {
         expect(instance2.container === child).to.be.true;
     })
 
-    it("Should inject on base class declaration", async() =>{
+    it("Should inject on base class declaration", async () => {
         const instance = await DI.resolve<ChildClass>(ChildClass);
         expect(instance.baseInject).to.be.not.null;
-        expect(instance.baseInject instanceof  BaseInject).to.be.true;
+        expect(instance.baseInject instanceof BaseInject).to.be.true;
     });
 
     it("Framework module initialization strategy", async () => {
@@ -391,6 +403,12 @@ describe("Dependency injection", () => {
     it("Should throw if type is unknown", async () => {
         expect(DI.resolve(undefined)).to.be.rejectedWith(ArgumentException, "argument `type` cannot be null or undefined");
     })
+
+    it("FrameworkStrategy should not resolve object", async () => {
+
+
+
+    });
 
     it("Should resolve from factory func", async () => {
         class IDatabase { }
