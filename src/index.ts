@@ -203,7 +203,6 @@ export function Autoinject(injectType?: ServiceIdentifier | AbstractServiceIdent
   });
 }
 
-
 /**
  * Lazy injects service to object. Use only with class properties
  *
@@ -331,7 +330,7 @@ export class Container {
    * Singletons cache, objects that should be created only once are stored here.
    * @access private
    */
-  private cache: Map<string, any[]>;
+  private cache: Map<string, any[] | any>;
 
   /**
    * Resolve strategy array.
@@ -367,6 +366,8 @@ export class Container {
     }
 
     this.parent = parent;
+
+    this.registerSelf();
   }
 
   /**
@@ -374,7 +375,10 @@ export class Container {
    */
   public clear() {
     this.cache.clear();
+    this.cache = new Map<string, any[]>();
     this.registry.clear();
+
+    this.registerSelf();
   }
 
   /**
@@ -568,6 +572,11 @@ export class Container {
       return newInstance;
     }
   }
+
+  // allows container instance to be resolved
+  private registerSelf() {
+    this.cache.set("Container", this);
+  }
 }
 
 // tslint:disable-next-line: no-namespace
@@ -579,7 +588,7 @@ export namespace DI {
 
   // add modules resolve strategy to proper init
   RootContainer.ResolveStrategies.push(new FrameworkModuleResolveStrategy());
-  
+
   /**
    * Clears root container registry and cache.
    */

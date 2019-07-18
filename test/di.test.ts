@@ -4,7 +4,7 @@ import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
 import { ArgumentException } from '@spinajs/exceptions'
-import { Autoinject, Container, DI, Inject, LazyInject, NewInstance, PerChildInstance , Singleton} from './../src/';
+import { Autoinject, Container, DI, Inject, LazyInject, NewInstance, PerChildInstance, Singleton } from './../src/';
 
 const expect = chai.expect;
 chai.use(chaiAsPromised);
@@ -12,9 +12,9 @@ chai.use(chaiAsPromised);
 @Singleton()
 // @ts-ignore
 class Foo {
-    public static Counter : number;
-    
-    public static initialize(){
+    public static Counter: number;
+
+    public static initialize() {
         Foo.Counter = 0;
     }
 
@@ -28,8 +28,8 @@ Foo.initialize();
 @NewInstance()
 // @ts-ignore
 class BarFar {
-    public static Counter : number;
-    public static initialize(){
+    public static Counter: number;
+    public static initialize() {
         BarFar.Counter = 0;
     }
 
@@ -45,8 +45,8 @@ BarFar.initialize();
 @PerChildInstance()
 // @ts-ignore
 class Far {
-    public static Counter : number;
-    public static initialize(){
+    public static Counter: number;
+    public static initialize() {
         Far.Counter = 0;
     }
 
@@ -61,10 +61,9 @@ class Zar {
 
 }
 
- 
 
-class AutoinjectBar
-{
+
+class AutoinjectBar {
 
 }
 
@@ -75,59 +74,56 @@ class AutoinjectClass {
     public Test: AutoinjectBar = null;
 }
 
-class LazyInjectDep
-{
-    public static Counter  : number;
+class LazyInjectDep {
+    public static Counter: number;
 
-    constructor(){
-        LazyInjectDep.Counter ++;
+    constructor() {
+        LazyInjectDep.Counter++;
     }
 }
 
 LazyInjectDep.Counter = 0;
 
 
-class LazyInjectResolve
-{
+class LazyInjectResolve {
     @LazyInject(LazyInjectDep)
     // @ts-ignore
-    public Instance : LazyInjectDep;
+    public Instance: LazyInjectDep;
 }
 
-abstract class SampleBaseClass
-{
-    public Name : string;
+abstract class SampleBaseClass {
+    public Name: string;
 }
 
-class SampleImplementation1 extends SampleBaseClass{
+class SampleImplementation1 extends SampleBaseClass {
 
-    constructor(){
+    constructor() {
         super();
 
         this.Name = "Sample1";
     }
 }
 
-class SampleImplementation2 extends SampleBaseClass{
-    constructor(){
+class SampleImplementation2 extends SampleBaseClass {
+    constructor() {
         super();
 
         this.Name = "Sample2";
     }
 }
 
-class SampleMultipleAutoinject{
+class SampleMultipleAutoinject {
 
     @Autoinject(SampleBaseClass)
     // @ts-ignore
-    public Instances : SampleBaseClass[];
+    public Instances: SampleBaseClass[];
 
 
 }
 
 @Singleton()
 // @ts-ignore
-class TestModule{
+class TestModule {
     public Initialized = false;
 
     // tslint:disable-next-line: no-empty
@@ -136,9 +132,56 @@ class TestModule{
     }
 }
 
+@Singleton()
+// @ts-ignore
+class TestModuleSync {
+    public Initialized = false;
+
+    // tslint:disable-next-line: no-empty
+    public initialize() {
+        this.Initialized = true;
+    }
+}
+
+@Inject(Container)
+// @ts-ignore
+class TestInjectContainerAsParameter {
+
+    constructor(public container: Container) {
+
+    }
+}
+
+class TestInjectContainerAsProperty {
+    
+    @Autoinject()
+    // @ts-ignore
+    public container: Container;
+}
+
 describe("Dependency injection", () => {
     beforeEach(() => {
         DI.clear();
+    })
+
+    it("Inject container", async () => {
+        const instance = await DI.resolve<TestInjectContainerAsParameter>(TestInjectContainerAsParameter);
+        const instance2 = await DI.resolve<TestInjectContainerAsProperty>(TestInjectContainerAsProperty);
+        const root = DI.RootContainer;
+        expect(instance.container === root).to.be.true;
+        expect(instance2.container === root).to.be.true;
+
+    })
+
+    it("Inject child container", async () => {
+        const child = DI.child();
+        const instance = await child.resolve<TestInjectContainerAsParameter>(TestInjectContainerAsParameter);
+        const instance2 = await child.resolve<TestInjectContainerAsProperty>(TestInjectContainerAsProperty);
+        const root = DI.RootContainer;
+        expect(instance.container === root).to.be.false;
+        expect(instance2.container === root).to.be.false;
+        expect(instance.container === child).to.be.true;
+        expect(instance2.container === child).to.be.true;
     })
 
     it("Framework module initialization strategy", async () => {
@@ -148,7 +191,14 @@ describe("Dependency injection", () => {
         expect(module.Initialized).to.be.true;
     })
 
-    it("Register multiple classes with same base class", async () =>{
+    it("Framework module initialization strategy sync", async () => {
+        const module = await DI.resolve<TestModuleSync>(TestModuleSync);
+
+        expect(module).to.be.not.null;
+        expect(module.Initialized).to.be.true;
+    })
+
+    it("Register multiple classes with same base class", async () => {
         DI.register(SampleImplementation1).as(SampleBaseClass);
         DI.register(SampleImplementation2).as(SampleBaseClass);
 
@@ -161,7 +211,7 @@ describe("Dependency injection", () => {
 
 
     });
- 
+
     it("Autoinject resolve", async () => {
 
         const autoinjected = await DI.resolve<AutoinjectClass>(AutoinjectClass);
@@ -171,7 +221,7 @@ describe("Dependency injection", () => {
         expect(autoinjected.Test instanceof AutoinjectBar).to.be.true;
     })
 
-    it("Lazy inject check", async () =>{
+    it("Lazy inject check", async () => {
 
         const lazyinject = await DI.resolve<LazyInjectResolve>(LazyInjectResolve);
 
@@ -269,17 +319,17 @@ describe("Dependency injection", () => {
 
     it("Register type as singleton", async () => {
         class RegisterBase {
-            public static Count : number;
+            public static Count: number;
         }
         RegisterBase.Count = 0;
         class RegisterImpl implements RegisterBase {
-            public static Count : number;
+            public static Count: number;
             constructor() {
                 RegisterImpl.Count++;
             }
         }
         RegisterImpl.Count = 0;
-        
+
 
         DI.register(RegisterImpl).as(RegisterBase);
 
