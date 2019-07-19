@@ -286,7 +286,17 @@ describe("Dependency injection", () => {
             const single4 = await child.resolve<Foo>(Foo);
 
             expect(Foo.Counter).to.eq(1);
-            expect((single === single2 && single === single3 && single === single4)).to.equal(true);
+            expect((single === single3 && single === single4)).to.equal(true);
+
+            // second level child
+            {
+                const child2= child.child();
+                const single5 = await child.resolve<Foo>(Foo);
+                const single6 = await child.resolve<Foo>(Foo);
+
+                expect(Foo.Counter).to.eq(1);
+                expect((single === single5 && single === single6)).to.equal(true);
+            }
         }
     })
 

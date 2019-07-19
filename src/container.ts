@@ -26,12 +26,12 @@ export class Container implements IContainer {
   /**
    * Resolve strategy array.
    */
-  private strategies: IResolveStrategy[] = [];
+  private strategies: IResolveStrategy[];
 
   /**
    * Parent container if avaible
    */
-  private parent: Container = undefined;
+  private parent: IContainer;
 
   /**
    * Returns container cache - map object with resolved classes as singletons
@@ -40,7 +40,7 @@ export class Container implements IContainer {
     return this.cache;
   }
 
-  public get ResolveStrategies(): IResolveStrategy[] {
+  public get Strategies(): IResolveStrategy[] {
     return this.strategies;
   }
 
@@ -48,15 +48,16 @@ export class Container implements IContainer {
     return this.registry;
   }
 
-  constructor(parent?: Container) {
+  constructor(parent?: IContainer) {
     this.registry = new Map<Class<any>, any[]>();
     this.cache = new Map<string, any[]>();
+    this.strategies = [];
+    this.parent = parent || undefined;
 
     if (parent) {
-      this.strategies = parent.ResolveStrategies.slice(0);
+      this.strategies = parent.Strategies.slice(0);
     }
 
-    this.parent = parent;
 
     this.registerSelf();
   }
@@ -103,7 +104,7 @@ export class Container implements IContainer {
    * Creates child DI container.
    *
    */
-  public child(): Container {
+  public child(): IContainer {
     return new Container(this);
   }
 
@@ -119,7 +120,7 @@ export class Container implements IContainer {
     if (this.cache.has(identifier)) {
       return this.cache.get(identifier);
     } else if (this.parent && parent) {
-      return this.parent.get(service);
+      return this.parent.get(service, parent);
     }
 
     return null;

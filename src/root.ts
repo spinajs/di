@@ -11,7 +11,7 @@ export namespace DI {
     export const RootContainer = new Container();
 
     // add modules resolve strategy to proper init
-    RootContainer.ResolveStrategies.push(new FrameworkModuleResolveStrategy());
+    RootContainer.Strategies.push(new FrameworkModuleResolveStrategy());
 
     /**
      * Clears root container registry and cache.
