@@ -1,6 +1,6 @@
-type Abstract<T> = Function & { prototype: T };
-type Constructor<T> = new (...args: any[]) => T;
-type Class<T> = Abstract<T> | Constructor<T>;
+type Abstract<T = any> = Function & { prototype: T };
+type Constructor<T = any> = new (...args: any[]) => T;
+type Class<T = any> = Abstract<T> | Constructor<T>;
  
 declare class TypedArray<T> extends Array<T>{
 

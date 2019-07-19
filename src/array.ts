@@ -7,6 +7,7 @@ export class TypedArray<T> extends Array<T>{
 }
 
 // tslint:disable-next-line: only-arrow-functions
-Array.prototype.ofType = function <T>(type: Class<T>) {
+Array.ofType = function <T>(type: Class<T>) {
     return new TypedArray<T>(type);
 }
+ 

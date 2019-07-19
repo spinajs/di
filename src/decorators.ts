@@ -1,32 +1,28 @@
 import { ResolveType } from "./enums";
 import { IInjectDescriptor } from "./interfaces";
-import { Constructor, Abstract<T> } from "./types";
+import { DI } from "./root";
 
 
-/**
- * Global symbol used as property key on class
- * that handle DI behaviour.
- */
 export const DI_DESCRIPTION_SYMBOL = Symbol.for('DI_INJECTION_DESCRIPTOR');
 
-function injectable(callback?: (descriptor: IInjectDescriptor, target: ArrayBuffer, propertyKey: string | symbol, indexOrDescriptor: number | PropertyDescriptor) => void): any {
+function injectable(callback?: (descriptor: IInjectDescriptor<any>, target: ArrayBuffer, propertyKey: string | symbol, indexOrDescriptor: number | PropertyDescriptor) => void): any {
     return (target: any, propertyKey: string | symbol, indexOrDescriptor: number | PropertyDescriptor) => {
-      let descriptor: IInjectDescriptor = target[DI_DESCRIPTION_SYMBOL];
-      if (!descriptor) {
-        descriptor = {
-          inject: [],
-          resolver: ResolveType.Singleton
-        };
-  
-        target[DI_DESCRIPTION_SYMBOL] = descriptor;
-      }
-  
-      if (callback) {
-        callback(descriptor, target, propertyKey, indexOrDescriptor);
-      }
+        let descriptor: IInjectDescriptor<any> = target[DI_DESCRIPTION_SYMBOL];
+        if (!descriptor) {
+            descriptor = {
+                inject: [],
+                resolver: ResolveType.Singleton
+            };
+
+            target[DI_DESCRIPTION_SYMBOL] = descriptor;
+        }
+
+        if (callback) {
+            callback(descriptor, target, propertyKey, indexOrDescriptor);
+        }
     }
-  }
-  
+}
+
 /**
  * Sets dependency injection guidelines - what to inject for specified class. If multiple instances are registered at specified type,
  * only first one is resolved and injected
@@ -53,17 +49,17 @@ function injectable(callback?: (descriptor: IInjectDescriptor, target: ArrayBuff
  *
  * ```
  */
-export function Inject(...args: Array<Constructor | Abstract<T>>) {
-  return injectable((descriptor: IInjectDescriptor) => {
-    for (const a of args) {
-      descriptor.inject.push({
-        all: false,
-        autoinject: false,
-        autoinjectKey: '',
-        inject: a as any,
-      });
-    }
-  });
+export function Inject(...args: Class[]) {
+    return injectable((descriptor: IInjectDescriptor) => {
+        for (const a of args) {
+            descriptor.inject.push({
+                all: false,
+                autoinject: false,
+                autoinjectKey: '',
+                inject: a as any,
+            });
+        }
+    });
 }
 
 
@@ -87,17 +83,17 @@ export function Inject(...args: Array<Constructor | Abstract<T>>) {
  *
  * ```
  */
-export function InjectAll(...args: Array<Constructor | Abstract<T>>) {
-  return injectable((descriptor: IInjectDescriptor) => {
-    for (const a of args) {
-      descriptor.inject.push({
-        all: true,
-        autoinject: false,
-        autoinjectKey: '',
-        inject: a as any,
-      });
-    }
-  });
+export function InjectAll(...args: Class[]) {
+    return injectable((descriptor: IInjectDescriptor) => {
+        for (const a of args) {
+            descriptor.inject.push({
+                all: true,
+                autoinject: false,
+                autoinjectKey: '',
+                inject: a as any,
+            });
+        }
+    });
 }
 
 /**
@@ -126,22 +122,22 @@ export function InjectAll(...args: Array<Constructor | Abstract<T>>) {
  *
  * ```
  */
-export function Autoinject(injectType?: Constructor | Abstract<T>) {
-  return injectable((descriptor: IInjectDescriptor, target: any, propertyKey: string) => {
-    const type = Reflect.getMetadata('design:type', target, propertyKey);
-    const isArray = type.name === 'Array';
+export function Autoinject(injectType?: Class[]) {
+    return injectable((descriptor: IInjectDescriptor, target: any, propertyKey: string) => {
+        const type = Reflect.getMetadata('design:type', target, propertyKey);
+        const isArray = type.name === 'Array';
 
-    if (type.name === 'Array' && !injectType) {
-      throw new Error("you must provide inject type when injecting array");
-    }
+        if (type.name === 'Array' && !injectType) {
+            throw new Error("you must provide inject type when injecting array");
+        }
 
-    descriptor.inject.push({
-      all: isArray ? true : false,
-      autoinject: true,
-      autoinjectKey: propertyKey,
-      inject: isArray ? injectType : type,
-    })
-  });
+        descriptor.inject.push({
+            all: isArray ? true : false,
+            autoinject: true,
+            autoinjectKey: propertyKey,
+            inject: isArray ? injectType : type,
+        })
+    });
 }
 
 /**
@@ -167,46 +163,46 @@ export function Autoinject(injectType?: Constructor | Abstract<T>) {
  * ```
  */
 export function LazyInject(service: Constructor | string) {
-  return (target?: any, key?: string) => {
-    // property getter
-    const getter = () => {
-      if (typeof service === "string") {
-        return DI.get<any>(service);
-      } else {
-        return DI.resolve<any>(service);
-      }
-    };
+    return (target?: any, key?: string) => {
+        // property getter
+        const getter = () => {
+            if (typeof service === "string") {
+                return DI.get<any>(service);
+            } else {
+                return DI.resolve<any>(service);
+            }
+        };
 
-    // Create new property with getter and setter
-    Object.defineProperty(target, key, {
-      configurable: true,
-      enumerable: false,
-      get: getter,
-    });
-  };
+        // Create new property with getter and setter
+        Object.defineProperty(target, key, {
+            configurable: true,
+            enumerable: false,
+            get: getter,
+        });
+    };
 }
 
 /**
  * Per child instance injection decorator - object is resolved once per container - child containers have own instances.
  */
 export function PerChildInstance() {
-  return injectable((descriptor: IInjectDescriptor) => {
-    descriptor.resolver = ResolveType.PerChildContainer;
-  });
+    return injectable((descriptor: IInjectDescriptor) => {
+        descriptor.resolver = ResolveType.PerChildContainer;
+    });
 }
 
 /**
  * NewInstance injection decorator - every time class is injected - its created from scratch
  */
 export function NewInstance() {
-  return injectable((descriptor: IInjectDescriptor) => {
-    descriptor.resolver = ResolveType.NewInstance;
-  });
+    return injectable((descriptor: IInjectDescriptor) => {
+        descriptor.resolver = ResolveType.NewInstance;
+    });
 }
 
 /**
  * Singleton injection decorator - every time class is resolved - its created only once globally ( even in child DI containers )
  */
 export function Singleton() {
-  return injectable();
+    return injectable();
 }

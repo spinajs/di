@@ -1,5 +1,5 @@
 import { ResolveType } from "./enums";
-import { Class, Factory } from "./types";
+import { Factory } from "./types";
 
 /**
  * Interface to describe DI binding behaviour
@@ -34,12 +34,12 @@ export interface IContainer{
 /**
  * Injection description definition structure
  */
-export interface IInjectDescriptor<T> {
+export interface IInjectDescriptor<T = any> {
     inject: Array<IToInject<T>>;
     resolver: ResolveType;
 }
 
-export interface IToInject<T> {
+export interface IToInject<T = any> {
     inject: Class<T>;
     autoinject: boolean;
     all: boolean;
