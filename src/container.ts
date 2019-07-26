@@ -1,6 +1,7 @@
 import { ArgumentException } from "@spinajs/exceptions";
 import * as _ from 'lodash';
 import 'reflect-metadata';
+import { TypedArray } from './array';
 import { DI_DESCRIPTION_SYMBOL } from "./decorators";
 import { ResolveType } from "./enums";
 import { isConstructor } from './helpers';
@@ -153,25 +154,24 @@ export class Container implements IContainer {
     return false;
   }
 
-  public resolve<T>(type: Class<T> | Factory<T>, options?: any[]): Promise<T> | T | Promise<T[]> | T[] {
+  public resolve<T>(type: Class<T> | Factory<T>, options?: any[]): Promise<T> | T | T[] | Promise<T[]> {
 
     if (_.isNil(type)) {
       throw new ArgumentException('argument `type` cannot be null or undefined');
     }
 
     const targetType = (type instanceof TypedArray) ? this.registry.get(type.Type) || [type.Type] : this.registry.get(type) || [type];
-  
-    if(type instanceof TypedArray){
-      const resolved = targetType.map( r => this.resolveType(r));
-      if(resolved.some( r => r instanceof Promise)){
-        return Promise.all(resolved);
+
+    if (type instanceof TypedArray) {
+      const resolved = targetType.map(r => this.resolveType(r));
+      if (resolved.some(r => r instanceof Promise)) {
+        return Promise.all(resolved) as Promise<T[]>;
       }
 
-      return resolved;
+      return resolved as T[];
     }
-    
+
     return this.resolveType(targetType[0], options);
-    
   }
 
   private resolveType<T>(type: Class<T> | Factory<T>, options?: any[]): Promise<T> | T {
@@ -182,19 +182,40 @@ export class Container implements IContainer {
     if (deps instanceof Promise) {
       return deps.then(resolvedDependencies => {
         return _resolve(descriptor, type, resolvedDependencies);
-      });
+      }).then(_setCache);
+    } else {
+      const resInstance = _resolve(descriptor, type, deps as IResolvedInjection[]);
+      if (resInstance instanceof Promise) {
+        return resInstance.then(_setCache);
+      }
+
+      _setCache(resInstance);
+      return resInstance;
     }
 
-    return _resolve(descriptor,type, deps);
+
+
+    function _setCache(r: any) {
+      if (descriptor.resolver === ResolveType.Singleton) {
+        if (!self.has(type, true)) {
+          self.Cache.set(type.name, r);
+        }
+      } else if (descriptor.resolver === ResolveType.PerChildContainer) {
+        if (!self.has(type, false)) {
+          self.Cache.set(type.name, r);
+        }
+      }
+      return r;
+    }
 
     function _resolve(d: IInjectDescriptor, t: Class<T> | Factory<T>, i: IResolvedInjection[]) {
       switch (d.resolver) {
         case ResolveType.NewInstance:
           return _getNewInstance(t, i);
         case ResolveType.Singleton:
-          return _getCachedInstance(teardown, true) || _getNewInstance(type, i);
+          return _getCachedInstance(t, true) || _getNewInstance(t, i);
         case ResolveType.PerChildContainer:
-          return  _getCachedInstance(t, false) || _getNewInstance(type, i);
+          return _getCachedInstance(t, false) || _getNewInstance(t, i);
       }
     }
 
@@ -203,12 +224,12 @@ export class Container implements IContainer {
     }
 
     function _resolveDeps(toInject: IToInject[]) {
-      const dependencies: IResolvedInjection[] = toInject.map(t => {
+      const dependencies = toInject.map(t => {
         const promiseOrVal = self.resolve(t.inject);
         if (promiseOrVal instanceof Promise) {
           return new Promise((res, _) => {
             res(promiseOrVal)
-          }).then((val) => {
+          }).then((val: any) => {
             return {
               autoinject: t.autoinject,
               autoinjectKey: t.autoinjectKey,
@@ -216,7 +237,11 @@ export class Container implements IContainer {
             };
           })
         }
-        return promiseOrVal;
+        return {
+          autoinject: t.autoinject,
+          autoinjectKey: t.autoinjectKey,
+          instance: promiseOrVal
+        };;
       });
 
       if (dependencies.some(p => p instanceof Promise)) {

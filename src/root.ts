@@ -37,7 +37,7 @@ export namespace DI {
      * @return - class instance
      * @throws { ArgumentException } if type is null or undefined
      */
-    export async function resolve<T>(type: Class<T> | Factory<T>, options?: any[]): Promise<T> {
+    export function resolve<T>(type: Class<T> | Factory<T> | T, options?: any[]): T extends T[] ? T[] | Promise<T[]> : Promise<T> | T  {
         return RootContainer.resolve<T>(type, options);
     }
 

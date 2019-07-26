@@ -110,14 +110,14 @@ class SampleImplementation2 extends SampleBaseClass {
     }
 }
 
-class SampleMultipleAutoinject {
+// class SampleMultipleAutoinject {
 
-    @Autoinject(SampleBaseClass)
-    // @ts-ignore
-    public Instances: SampleBaseClass[];
+//     @Autoinject(SampleBaseClass)
+//     // @ts-ignore
+//     public Instances: SampleBaseClass[];
 
 
-}
+// }
 
 @Singleton()
 // @ts-ignore
@@ -188,7 +188,7 @@ describe("Dependency injection", () => {
     })
 
     it("then func should not be called on class at resolve", async () => {
-        const instance = ((await DI.resolve<ThenableClassTest>(ThenableClassTest)) as any) as ThenableClassTest;
+        const instance = ((DI.resolve<ThenableClassTest>(ThenableClassTest)) as any) as ThenableClassTest;
         expect(instance.ThenCalled).to.be.false;
 
     })
@@ -237,12 +237,11 @@ describe("Dependency injection", () => {
         DI.register(SampleImplementation1).as(SampleBaseClass);
         DI.register(SampleImplementation2).as(SampleBaseClass);
 
-        const val = await DI.resolve<SampleMultipleAutoinject>(SampleMultipleAutoinject);
+        const val = await DI.resolve(Array.ofType(SampleBaseClass));
         expect(val).to.be.not.null;
-        expect(val.Instances).to.be.not.null;
-        expect(val.Instances.length).to.eq(2);
-        expect(val.Instances[0] instanceof SampleBaseClass).to.be.true;
-        expect(val.Instances[1] instanceof SampleBaseClass).to.be.true;
+        expect(val.length).to.eq(2);
+        expect(val[0] instanceof SampleBaseClass).to.be.true;
+        expect(val[1] instanceof SampleBaseClass).to.be.true;
 
 
     });
@@ -411,7 +410,7 @@ describe("Dependency injection", () => {
     })
 
     it("Should throw if type is unknown", async () => {
-        expect(DI.resolve(undefined)).to.be.rejectedWith(ArgumentException, "argument `type` cannot be null or undefined");
+        expect(() => DI.resolve(undefined)).to.throw(ArgumentException, "argument `type` cannot be null or undefined");
     })
 
     it("FrameworkStrategy should not resolve object", async () => {

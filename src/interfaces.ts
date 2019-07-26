@@ -28,7 +28,7 @@ export interface IContainer{
     child(): IContainer; 
     get<T = {}>(service: string | Class<T>, parent? : boolean): T;
     has<T>(service: string | Class<T>, parent? : boolean): boolean
-    resolve<T>(type: Class<T> | Factory<T>, options?: any[]): Promise<T>
+    resolve<T>(type: Class<T> | Factory<T> | T, options?: any[]): T extends T[] ? T[] | Promise<T[]> : Promise<T> | T
 }
 
 /**
