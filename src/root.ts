@@ -1,6 +1,6 @@
 import { Container } from "./container";
 import { IBind, IContainer } from "./interfaces";
-import { FrameworkModuleResolveStrategy } from "./strategies";
+import { FrameworkModuleStrategy } from "./strategies";
 import { Factory } from "./types";
 
 // tslint:disable-next-line: no-namespace
@@ -11,7 +11,7 @@ export namespace DI {
     export const RootContainer : IContainer = new Container();
 
     // add modules resolve strategy to proper init
-    RootContainer.Strategies.push(new FrameworkModuleResolveStrategy());
+    RootContainer.Strategies.push(new FrameworkModuleStrategy());
 
     /**
      * Clears root container registry and cache.
