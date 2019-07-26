@@ -1,3 +1,6 @@
+// tslint:disable-next-line: no-reference
+/// <reference path="./../typings/array.d.ts" />
+
 import { Class } from "./types";
 
 export class TypedArray<T> extends Array<T>{

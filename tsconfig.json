@@ -20,7 +20,7 @@
         
     },
     "include": [
-        "src/**/*","typings/array.d.ts"
+        "src/**/*","./typings/array.d.ts"
     ],
     "exclude": [
         "node_modules"
