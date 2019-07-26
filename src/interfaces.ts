@@ -21,13 +21,13 @@ export interface IBind {
 export interface IContainer{
     Cache : Map<string, any[] | any>;
     Registry : Map<Class<any>, any[] | any>;
-    Strategies : IResolveStrategy[];
+    Strategies : IStrategy[];
 
     clear() : void;
     register<T>(implementation: Class<T>): IBind;
     child(): IContainer; 
-    get<T = {}>(service: string | Class<T>, parent : boolean): T;
-    has<T>(service: string | Class<T>, parent : boolean): boolean
+    get<T = {}>(service: string | Class<T>, parent? : boolean): T;
+    has<T>(service: string | Class<T>, parent? : boolean): boolean
     resolve<T>(type: Class<T> | Factory<T>, options?: any[]): Promise<T>
 }
 
@@ -61,6 +61,6 @@ export interface IResolvedInjection {
  *
  * @see FrameworkModuleResolveStrategy implementation
  */
-export interface IResolveStrategy {
-    resolve: (target: any, container: IContainer) => Promise<void>;
+export interface IStrategy {
+    resolve: (target: any, container: IContainer) => Promise<void> | void;
 }

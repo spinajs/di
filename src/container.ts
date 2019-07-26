@@ -1,9 +1,10 @@
 import { ArgumentException } from "@spinajs/exceptions";
 import * as _ from 'lodash';
 import 'reflect-metadata';
+import { DI_DESCRIPTION_SYMBOL } from "./decorators";
 import { ResolveType } from "./enums";
 import { isConstructor } from './helpers';
-import { IBind, IContainer, IResolvedInjection, IResolveStrategy } from './interfaces';
+import { IBind, IContainer, IInjectDescriptor, IResolvedInjection, IStrategy, IToInject } from './interfaces';
 import { Factory } from './types';
 
 /**
@@ -15,7 +16,7 @@ export class Container implements IContainer {
    * eg. that class IConfiguration should be resolved as DatabaseConfiguration etc.
    * @access private
    */
-  private registry: Map<Class<any>, any[]>;
+  private registry: Map<Class<any>, Array<Class<any>>>;
 
   /**
    * Singletons cache, objects that should be created only once are stored here.
@@ -26,7 +27,7 @@ export class Container implements IContainer {
   /**
    * Resolve strategy array.
    */
-  private strategies: IResolveStrategy[];
+  private strategies: IStrategy[];
 
   /**
    * Parent container if avaible
@@ -40,11 +41,11 @@ export class Container implements IContainer {
     return this.cache;
   }
 
-  public get Strategies(): IResolveStrategy[] {
+  public get Strategies(): IStrategy[] {
     return this.strategies;
   }
 
-  public get Registry(): Map<Class<any>, any[]> {
+  public get Registry(): Map<Class<any>, Array<Class<any>>> {
     return this.registry;
   }
 
@@ -152,70 +153,78 @@ export class Container implements IContainer {
     return false;
   }
 
-  public async resolve<T>(type: Class<T> | Factory<T>, options?: any[]): Promise<T> {
-    return (await this.resolveAll<T>(type, options))[0];
-  }
-
-  /**
-   * Resolves specified type.
-   *
-   * @param type { ServiceIdentifier | ServiceFactory } - class to resolve or service factory function
-   * @param options - optional parameters passed to class constructor
-   * @return - class instance
-   * @throws { ArgumentException } if type is null or undefined
-   */
-  public async resolveAll<T>(type: ServiceIdentifier | ServiceFactory | AbstractServiceIdentifier, options?: any[]): Promise<T[]> {
-    const self = this;
-    const instances: any[] = [];
+  public resolve<T>(type: Class<T> | Factory<T>, options?: any[]): Promise<T> | T | Promise<T[]> | T[] {
 
     if (_.isNil(type)) {
       throw new ArgumentException('argument `type` cannot be null or undefined');
     }
 
-    const targets = this.registry.has(type as ServiceIdentifier) ? this.registry.get(type as ServiceIdentifier) : [type];
-
-    for (const target of targets) {
-      let instance = null;
-      /**
-       * Double cast to remove typescript errors, we are sure that needed properties are in class definition
-       */
-      const descriptor = (
-        ((target as any)[DI_DESCRIPTION_SYMBOL] || (target.prototype && (((target as any).prototype)[DI_DESCRIPTION_SYMBOL])) || { inject: [], resolver: ResolveType.Singleton })
-      ) as IInjectDescriptor;
-
-      const toInject: IResolvedInjection[] = await Promise.all(
-        descriptor.inject.map(async t => {
-          return {
-            autoinject: t.autoinject,
-            autoinjectKey: t.autoinjectKey,
-            instance: (t.all) ? await this.resolveAll(t.inject) : await this.resolve(t.inject),
-          };
-        }),
-      );
-
-      const cacheKey = _.isFunction(target) ? type : target;
-      switch (descriptor.resolver) {
-        case ResolveType.NewInstance:
-          instance = await _getNewInstance(target, toInject);
-          break;
-        case ResolveType.Singleton:
-          instance = _getCachedInstance(cacheKey, true) || (await _getNewInstance(target, toInject));
-          break;
-        case ResolveType.PerChildContainer:
-          instance = _getCachedInstance(cacheKey, false) || (await _getNewInstance(target, toInject));
-          break;
+    const targetType = (type instanceof TypedArray) ? this.registry.get(type.Type) || [type.Type] : this.registry.get(type) || [type];
+  
+    if(type instanceof TypedArray){
+      const resolved = targetType.map( r => this.resolveType(r));
+      if(resolved.some( r => r instanceof Promise)){
+        return Promise.all(resolved);
       }
 
-      if (descriptor.resolver === ResolveType.PerChildContainer || descriptor.resolver === ResolveType.Singleton) {
-        if (!self.cache.has(cacheKey.name)) {
-          self.cache.set(cacheKey.name, instance);
-        }
-      }
+      return resolved;
+    }
+    
+    return this.resolveType(targetType[0], options);
+    
+  }
 
-      instances.push(instance);
+  private resolveType<T>(type: Class<T> | Factory<T>, options?: any[]): Promise<T> | T {
+    const self = this;
+    const descriptor = _extractDescriptor<T>(type);
+    const deps = _resolveDeps(descriptor.inject);
+
+    if (deps instanceof Promise) {
+      return deps.then(resolvedDependencies => {
+        return _resolve(descriptor, type, resolvedDependencies);
+      });
     }
 
-    return instances;
+    return _resolve(descriptor,type, deps);
+
+    function _resolve(d: IInjectDescriptor, t: Class<T> | Factory<T>, i: IResolvedInjection[]) {
+      switch (d.resolver) {
+        case ResolveType.NewInstance:
+          return _getNewInstance(t, i);
+        case ResolveType.Singleton:
+          return _getCachedInstance(teardown, true) || _getNewInstance(type, i);
+        case ResolveType.PerChildContainer:
+          return  _getCachedInstance(t, false) || _getNewInstance(type, i);
+      }
+    }
+
+    function _extractDescriptor<T>(type: Abstract<T> | Constructor<T> | Factory<T>) {
+      return (((type as any)[DI_DESCRIPTION_SYMBOL] || (type.prototype && (((type as any).prototype)[DI_DESCRIPTION_SYMBOL])) || { inject: [], resolver: ResolveType.Singleton })) as IInjectDescriptor;
+    }
+
+    function _resolveDeps(toInject: IToInject[]) {
+      const dependencies: IResolvedInjection[] = toInject.map(t => {
+        const promiseOrVal = self.resolve(t.inject);
+        if (promiseOrVal instanceof Promise) {
+          return new Promise((res, _) => {
+            res(promiseOrVal)
+          }).then((val) => {
+            return {
+              autoinject: t.autoinject,
+              autoinjectKey: t.autoinjectKey,
+              instance: val
+            };
+          })
+        }
+        return promiseOrVal;
+      });
+
+      if (dependencies.some(p => p instanceof Promise)) {
+        return Promise.all(dependencies);
+      }
+
+      return dependencies;
+    }
 
     function _getCachedInstance(e: any, parent: boolean): any {
       if (self.has(e.name, parent)) {
@@ -225,7 +234,7 @@ export class Container implements IContainer {
       return null;
     }
 
-    async function _getNewInstance(typeToCreate: any, a?: IResolvedInjection[]): Promise<any[]> {
+    function _getNewInstance(typeToCreate: any, a?: IResolvedInjection[]): Promise<any> {
       let args: any[] = [null];
       let newInstance: any = null;
 
@@ -251,12 +260,21 @@ export class Container implements IContainer {
           newInstance[ai.autoinjectKey] = ai.instance;
         }
 
-        await Promise.all(self.strategies.map(s => s.resolve(newInstance, self)));
+        const strategies = self.strategies.map(s => s.resolve(newInstance, self));
+        if (strategies.some(s => s instanceof Promise)) {
+          return Promise.all(strategies.filter(s => s instanceof Promise)).then(_ => {
+            return newInstance;
+          })
+        }
       }
 
       return newInstance;
     }
   }
+
+
+
+  //  
 
   // allows container instance to be resolved
   private registerSelf() {

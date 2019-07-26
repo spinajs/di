@@ -3,9 +3,7 @@ type Constructor<T = any> = new (...args: any[]) => T;
 type Class<T = any> = Abstract<T> | Constructor<T>;
  
 declare class TypedArray<T> extends Array<T>{
-
     Type : Class<T>;
-
 }
 
 interface ArrayConstructor {

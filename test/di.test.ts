@@ -2,7 +2,7 @@ import { ArgumentException } from '@spinajs/exceptions'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
-import { Autoinject, Container, DI, Inject, LazyInject, NewInstance, PerChildInstance, Singleton } from '../src/container';
+import { Autoinject, Container, DI, Inject, LazyInject, NewInstance, PerChildInstance, Singleton } from '../src';
 
 const expect = chai.expect;
 chai.use(chaiAsPromised);
@@ -291,8 +291,8 @@ describe("Dependency injection", () => {
             // second level child
             {
                 const child2= child.child();
-                const single5 = await child.resolve<Foo>(Foo);
-                const single6 = await child.resolve<Foo>(Foo);
+                const single5 = await child2.resolve<Foo>(Foo);
+                const single6 = await child2.resolve<Foo>(Foo);
 
                 expect(Foo.Counter).to.eq(1);
                 expect((single === single5 && single === single6)).to.equal(true);

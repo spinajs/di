@@ -1,13 +1,15 @@
-import { IResolveStrategy } from "./interfaces";
+import * as _ from "lodash";
+import { IStrategy } from "./interfaces";
 
 /**
  * Resolve strategy to initialize framework internal modules.
  */
-export class FrameworkModuleResolveStrategy implements IResolveStrategy {
-    public async resolve(target: any) : Promise<void> {
-      if (target && target.initialize && _.isFunction(target.initialize)) {
-        await target.initialize();
-      }
+export class FrameworkModuleStrategy implements IStrategy {
+    public resolve(target: any): Promise<void> | void {
+        if (target && target.initialize && _.isFunction(target.initialize)) {
+            return new Promise((res, _) => {
+                res(target.initialize());
+            });
+        }
     }
-  }
-  
+}

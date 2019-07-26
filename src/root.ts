@@ -1,5 +1,5 @@
 import { Container } from "./container";
-import { IBind } from "./interfaces";
+import { IBind, IContainer } from "./interfaces";
 import { FrameworkModuleResolveStrategy } from "./strategies";
 import { Factory } from "./types";
 
@@ -8,7 +8,7 @@ export namespace DI {
     /**
      * App main DI container
      */
-    export const RootContainer = new Container();
+    export const RootContainer : IContainer = new Container();
 
     // add modules resolve strategy to proper init
     RootContainer.Strategies.push(new FrameworkModuleResolveStrategy());
@@ -66,7 +66,7 @@ export namespace DI {
      * Creates child DI container.
      *
      */
-    export function child(): Container {
+    export function child(): IContainer {
         return RootContainer.child();
     }
 }

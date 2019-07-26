@@ -122,7 +122,7 @@ export function InjectAll(...args: Class[]) {
  *
  * ```
  */
-export function Autoinject(injectType?: Class[]) {
+export function Autoinject(injectType?: Class) {
     return injectable((descriptor: IInjectDescriptor, target: any, propertyKey: string) => {
         const type = Reflect.getMetadata('design:type', target, propertyKey);
         const isArray = type.name === 'Array';
