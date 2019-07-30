@@ -161,9 +161,10 @@ export class Container implements IContainer {
     }
 
     const targetType = (type instanceof TypedArray) ? this.registry.get(type.Type) || [type.Type] : this.registry.get(type) || [type];
+    const sourceType = (type instanceof TypedArray) ? type.Type : type;
 
     if (type instanceof TypedArray) {
-      const resolved = targetType.map(r => this.resolveType(r));
+      const resolved = targetType.map(r => this.resolveType(r, sourceType));
       if (resolved.some(r => r instanceof Promise)) {
         return Promise.all(resolved) as Promise<T[]>;
       }
@@ -171,10 +172,10 @@ export class Container implements IContainer {
       return resolved as T[];
     }
 
-    return this.resolveType(targetType[0], options);
+    return this.resolveType(targetType[0], sourceType, options);
   }
 
-  private resolveType<T>(type: Class<T> | Factory<T>, options?: any[]): Promise<T> | T {
+  private resolveType<T>(type: Class<T> | Factory<T>, cacheKey: Class<T>, options?: any[]): Promise<T> | T {
     const self = this;
     const descriptor = _extractDescriptor<T>(type);
     const deps = _resolveDeps(descriptor.inject);
@@ -198,11 +199,11 @@ export class Container implements IContainer {
     function _setCache(r: any) {
       if (descriptor.resolver === ResolveType.Singleton) {
         if (!self.has(type, true)) {
-          self.Cache.set(type.name, r);
+          self.Cache.set(cacheKey.name, r);
         }
       } else if (descriptor.resolver === ResolveType.PerChildContainer) {
         if (!self.has(type, false)) {
-          self.Cache.set(type.name, r);
+          self.Cache.set(cacheKey.name, r);
         }
       }
       return r;
@@ -213,9 +214,9 @@ export class Container implements IContainer {
         case ResolveType.NewInstance:
           return _getNewInstance(t, i);
         case ResolveType.Singleton:
-          return _getCachedInstance(t, true) || _getNewInstance(t, i);
+          return _getCachedInstance(cacheKey, true) || _getNewInstance(t, i);
         case ResolveType.PerChildContainer:
-          return _getCachedInstance(t, false) || _getNewInstance(t, i);
+          return _getCachedInstance(cacheKey, false) || _getNewInstance(t, i);
       }
     }
 

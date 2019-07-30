@@ -188,7 +188,7 @@ describe("Dependency injection", () => {
     })
 
     it("then func should not be called on class at resolve", async () => {
-        const instance = ((DI.resolve<ThenableClassTest>(ThenableClassTest)) as any) as ThenableClassTest;
+        const instance = DI.resolve(ThenableClassTest) as ThenableClassTest;
         expect(instance.ThenCalled).to.be.false;
 
     })
@@ -262,10 +262,7 @@ describe("Dependency injection", () => {
         expect(LazyInjectDep.Counter).to.eq(0);
 
         const dep = lazyinject.Instance;
-        expect(dep).to.be.a("promise");
-
-        const resolvedDep = await dep;
-        expect(resolvedDep).to.be.instanceof(LazyInjectDep);
+        expect(dep).to.be.instanceof(LazyInjectDep);
 
     })
 
