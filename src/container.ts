@@ -80,7 +80,7 @@ export class Container implements IContainer {
    * @param type - interface object to register
    * @throws { ArgumentException } if type is null or undefined
    */
-  public register<T>(implementation: Class<T>): IBind {
+  public register<T>(implementation: Class<T> | Factory<T>): IBind {
     if (_.isNil(implementation)) {
       throw new ArgumentException('argument `type` cannot be null or undefined');
     }

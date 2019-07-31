@@ -24,7 +24,7 @@ export interface IContainer{
     Strategies : IStrategy[];
 
     clear() : void;
-    register<T>(implementation: Class<T>): IBind;
+    register<T>(implementation: Class<T> | Factory<T>): IBind;
     child(): IContainer; 
     get<T = {}>(service: string | Class<T>, parent? : boolean): T;
     has<T>(service: string | Class<T>, parent? : boolean): boolean

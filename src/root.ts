@@ -25,7 +25,7 @@ export namespace DI {
      * @param type - interface object to register
      * @throws { ArgumentException } if type is null or undefined
      */
-    export function register<T>(type: Constructor<T> | Factory<T>): IBind {
+    export function register<T>(type: Class<T> | Factory<T>): IBind {
         return RootContainer.register(type);
     }
 
