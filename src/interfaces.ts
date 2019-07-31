@@ -1,5 +1,5 @@
 import { ResolveType } from "./enums";
-import { Factory } from "./types";
+import { Class, Factory } from "./types";
 
 /**
  * Interface to describe DI binding behaviour

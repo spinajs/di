@@ -6,7 +6,7 @@ import { DI_DESCRIPTION_SYMBOL } from "./decorators";
 import { ResolveType } from "./enums";
 import { isConstructor } from './helpers';
 import { IBind, IContainer, IInjectDescriptor, IResolvedInjection, IStrategy, IToInject } from './interfaces';
-import { Factory } from './types';
+import { Class, Factory } from './types';
 
 /**
  * Dependency injection container implementation

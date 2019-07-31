@@ -1,7 +1,7 @@
 import { Container } from "./container";
 import { IBind, IContainer } from "./interfaces";
 import { FrameworkModuleStrategy } from "./strategies";
-import { Factory } from "./types";
+import { Class, Factory } from "./types";
 
 // tslint:disable-next-line: no-namespace
 export namespace DI {
