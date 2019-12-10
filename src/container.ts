@@ -5,7 +5,7 @@ import { TypedArray } from './array';
 import { DI_DESCRIPTION_SYMBOL } from "./decorators";
 import { ResolveType } from "./enums";
 import { isConstructor } from './helpers';
-import { IBind, IContainer, IInjectDescriptor, IResolvedInjection, IStrategy, IToInject } from './interfaces';
+import { IBind, IContainer, IInjectDescriptor, IResolvedInjection, ResolveStrategy, IToInject, AsyncResolveStrategy } from './interfaces';
 import { Class, Factory } from './types';
 
 /**
@@ -25,10 +25,7 @@ export class Container implements IContainer {
    */
   private cache: Map<string, any[] | any>;
 
-  /**
-   * Resolve strategy array.
-   */
-  private strategies: IStrategy[];
+
 
   /**
    * Parent container if avaible
@@ -42,9 +39,6 @@ export class Container implements IContainer {
     return this.cache;
   }
 
-  public get Strategies(): IStrategy[] {
-    return this.strategies;
-  }
 
   public get Registry(): Map<Class<any>, Array<Class<any>>> {
     return this.registry;
@@ -53,13 +47,7 @@ export class Container implements IContainer {
   constructor(parent?: IContainer) {
     this.registry = new Map<Class<any>, any[]>();
     this.cache = new Map<string, any[]>();
-    this.strategies = [];
     this.parent = parent || undefined;
-
-    if (parent) {
-      this.strategies = parent.Strategies.slice(0);
-    }
-
 
     this.registerSelf();
   }
@@ -154,7 +142,24 @@ export class Container implements IContainer {
     return false;
   }
 
-  public resolve<T>(type: Class<T> | Factory<T>, options?: any[]): Promise<T> | T | T[] | Promise<T[]> {
+  /**
+   * 
+   * Resolves single instance of class
+   * 
+   * @param type what to resolve, can be class definition or factory function
+   * @param options options passed to constructor / factory
+   */
+  public resolve<T>(type: Class<T> | Factory<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T> : T;
+
+  /**
+   * 
+   * Resolves all instances of given class. Under single definition can be registered multiple implementations.
+   * 
+   * @param type typed array of specified type. since TS does not expose array metadata and type its uses TypedArray<T> consctruct
+   * @param options options passed to constructor / factory
+   */
+  public resolve<T>(type: TypedArray<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
+  public resolve<T>(type: Class<T> | Factory<T> | TypedArray<T>, options?: any[]): Promise<T | T[]> | T | T[] {
 
     if (_.isNil(type)) {
       throw new ArgumentException('argument `type` cannot be null or undefined');
@@ -286,11 +291,16 @@ export class Container implements IContainer {
           newInstance[ai.autoinjectKey] = ai.instance;
         }
 
-        const strategies = self.strategies.map(s => s.resolve(newInstance, self));
-        if (strategies.some(s => s instanceof Promise)) {
-          return Promise.all(strategies.filter(s => s instanceof Promise)).then(_ => {
-            return newInstance;
-          })
+        if (newInstance instanceof AsyncResolveStrategy) {
+          return new Promise((res) => {
+            newInstance.resolveAsync(self).then(() => {
+              res(newInstance);
+            });
+          });
+        }
+
+        if (newInstance instanceof ResolveStrategy) {
+          newInstance.resolve(self);
         }
       }
 

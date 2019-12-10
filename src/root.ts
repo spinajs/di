@@ -1,6 +1,5 @@
 import { Container } from "./container";
-import { IBind, IContainer } from "./interfaces";
-import { FrameworkModuleStrategy } from "./strategies";
+import { IBind, IContainer, AsyncResolveStrategy } from "./interfaces";
 import { Class, Factory } from "./types";
 
 // tslint:disable-next-line: no-namespace
@@ -8,10 +7,7 @@ export namespace DI {
     /**
      * App main DI container
      */
-    export const RootContainer : IContainer = new Container();
-
-    // add modules resolve strategy to proper init
-    RootContainer.Strategies.push(new FrameworkModuleStrategy());
+    export const RootContainer: IContainer = new Container();
 
     /**
      * Clears root container registry and cache.
@@ -37,8 +33,10 @@ export namespace DI {
      * @return - class instance
      * @throws { ArgumentException } if type is null or undefined
      */
-    export function resolve<T>(type: Class<T> | Factory<T> | T, options?: any[]): T extends T[] ? T[] | Promise<T[]> : Promise<T> | T  {
-        return RootContainer.resolve<T>(type, options);
+    export function resolve<T>(type: Class<T> | Factory<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T> : T;
+    export function resolve<T>(type: TypedArray<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
+    export function resolve<T>(type: Class<T> | Factory<T> | TypedArray<T>, options?: any[]): Promise<T | T[]> | T | T[] {
+        return RootContainer.resolve<T>(type as any, options);
     }
 
     /**

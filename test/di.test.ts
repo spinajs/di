@@ -2,7 +2,7 @@ import { ArgumentException } from '@spinajs/exceptions'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
-import { Autoinject, Container, DI, Inject, LazyInject, NewInstance, PerChildInstance, Singleton } from '../src';
+import { AsyncResolveStrategy, Autoinject, Container, DI, Inject, LazyInject, NewInstance, PerChildInstance, ResolveStrategy, Singleton } from '../src';
 
 const expect = chai.expect;
 chai.use(chaiAsPromised);
@@ -121,25 +121,16 @@ class SampleImplementation2 extends SampleBaseClass {
 
 @Singleton()
 // @ts-ignore
-class TestModule {
+class TestModule extends ResolveStrategy {
     public Initialized = false;
 
     // tslint:disable-next-line: no-empty
-    public async initialize() {
+    public resolve() {
         this.Initialized = true;
     }
 }
 
-@Singleton()
-// @ts-ignore
-class TestModuleSync {
-    public Initialized = false;
 
-    // tslint:disable-next-line: no-empty
-    public initialize() {
-        this.Initialized = true;
-    }
-}
 
 @Inject(Container)
 // @ts-ignore
@@ -172,40 +163,25 @@ class ChildClass extends BaseClass {
 
 }
 
-class ThenableClassTest {
-
-    public ThenCalled = false;
-
-    // tslint:disable-next-line: no-empty
-    public then(_: (rows: any[]) => void, __: (err: Error) => void) {
-        this.ThenCalled = true;
-    }
-}
 
 describe("Dependency injection", () => {
     beforeEach(() => {
         DI.clear();
     })
 
-    it("then func should not be called on class at resolve", async () => {
-        const instance = DI.resolve(ThenableClassTest) as ThenableClassTest;
-        expect(instance.ThenCalled).to.be.false;
-
-    })
-
-    it("Inject container", async () => {
-        const instance = await DI.resolve<TestInjectContainerAsParameter>(TestInjectContainerAsParameter);
-        const instance2 = await DI.resolve<TestInjectContainerAsProperty>(TestInjectContainerAsProperty);
+    it("Inject container", () => {
+        const instance = DI.resolve<TestInjectContainerAsParameter>(TestInjectContainerAsParameter);
+        const instance2 = DI.resolve<TestInjectContainerAsProperty>(TestInjectContainerAsProperty);
         const root = DI.RootContainer;
         expect(instance.container === root).to.be.true;
         expect(instance2.container === root).to.be.true;
 
     })
 
-    it("Inject child container", async () => {
+    it("Inject child container", () => {
         const child = DI.child();
-        const instance = await child.resolve<TestInjectContainerAsParameter>(TestInjectContainerAsParameter);
-        const instance2 = await child.resolve<TestInjectContainerAsProperty>(TestInjectContainerAsProperty);
+        const instance = child.resolve<TestInjectContainerAsParameter>(TestInjectContainerAsParameter);
+        const instance2 = child.resolve<TestInjectContainerAsProperty>(TestInjectContainerAsProperty);
         const root = DI.RootContainer;
         expect(instance.container === root).to.be.false;
         expect(instance2.container === root).to.be.false;
@@ -213,31 +189,24 @@ describe("Dependency injection", () => {
         expect(instance2.container === child).to.be.true;
     })
 
-    it("Should inject on base class declaration", async () => {
-        const instance = await DI.resolve<ChildClass>(ChildClass);
+    it("Should inject on base class declaration", () => {
+        const instance = DI.resolve<ChildClass>(ChildClass);
         expect(instance.baseInject).to.be.not.null;
         expect(instance.baseInject instanceof BaseInject).to.be.true;
     });
 
-    it("Framework module initialization strategy", async () => {
-        const module = await DI.resolve<TestModule>(TestModule);
+    it("Framework module initialization strategy", () => {
+        const module = DI.resolve<TestModule>(TestModule);
 
         expect(module).to.be.not.null;
         expect(module.Initialized).to.be.true;
     })
 
-    it("Framework module initialization strategy sync", async () => {
-        const module = await DI.resolve<TestModuleSync>(TestModuleSync);
-
-        expect(module).to.be.not.null;
-        expect(module.Initialized).to.be.true;
-    })
-
-    it("Register multiple classes with same base class", async () => {
+    it("Register multiple classes with same base class", () => {
         DI.register(SampleImplementation1).as(SampleBaseClass);
         DI.register(SampleImplementation2).as(SampleBaseClass);
 
-        const val = await DI.resolve(Array.ofType(SampleBaseClass));
+        const val = DI.resolve(Array.ofType(SampleBaseClass));
         expect(val).to.be.not.null;
         expect(val.length).to.eq(2);
         expect(val[0] instanceof SampleBaseClass).to.be.true;
@@ -246,18 +215,18 @@ describe("Dependency injection", () => {
 
     });
 
-    it("Autoinject resolve", async () => {
+    it("Autoinject resolve", () => {
 
-        const autoinjected = await DI.resolve<AutoinjectClass>(AutoinjectClass);
+        const autoinjected = DI.resolve<AutoinjectClass>(AutoinjectClass);
 
         expect(autoinjected).to.be.not.null;
         expect(autoinjected.Test).to.be.not.null;
         expect(autoinjected.Test instanceof AutoinjectBar).to.be.true;
     })
 
-    it("Lazy inject check", async () => {
+    it("Lazy inject check", () => {
 
-        const lazyinject = await DI.resolve<LazyInjectResolve>(LazyInjectResolve);
+        const lazyinject = DI.resolve<LazyInjectResolve>(LazyInjectResolve);
 
         expect(LazyInjectDep.Counter).to.eq(0);
 
@@ -266,11 +235,11 @@ describe("Dependency injection", () => {
 
     })
 
-    it("Singleton creation", async () => {
+    it("Singleton creation", () => {
 
         // root 
-        const single = await DI.resolve<Foo>(Foo);
-        const single2 = await DI.resolve<Foo>(Foo);
+        const single = DI.resolve<Foo>(Foo);
+        const single2 = DI.resolve<Foo>(Foo);
 
         expect(Foo.Counter).to.eq(1);
         expect(single === single2).to.equal(true);
@@ -278,17 +247,17 @@ describe("Dependency injection", () => {
         // child
         {
             const child = DI.child();
-            const single3 = await child.resolve<Foo>(Foo);
-            const single4 = await child.resolve<Foo>(Foo);
+            const single3 = child.resolve<Foo>(Foo);
+            const single4 = child.resolve<Foo>(Foo);
 
             expect(Foo.Counter).to.eq(1);
             expect((single === single3 && single === single4)).to.equal(true);
 
             // second level child
             {
-                const child2= child.child();
-                const single5 = await child2.resolve<Foo>(Foo);
-                const single6 = await child2.resolve<Foo>(Foo);
+                const child2 = child.child();
+                const single5 = child2.resolve<Foo>(Foo);
+                const single6 = child2.resolve<Foo>(Foo);
 
                 expect(Foo.Counter).to.eq(1);
                 expect((single === single5 && single === single6)).to.equal(true);
@@ -296,9 +265,9 @@ describe("Dependency injection", () => {
         }
     })
 
-    it("New instance creation", async () => {
-        const single = await DI.resolve<BarFar>(BarFar);
-        const single2 = await DI.resolve<BarFar>(BarFar);
+    it("New instance creation", () => {
+        const single = DI.resolve<BarFar>(BarFar);
+        const single2 = DI.resolve<BarFar>(BarFar);
 
         expect(BarFar.Counter).to.eq(2);
         expect(single.InstanceCounter).to.eq(1);
@@ -307,8 +276,8 @@ describe("Dependency injection", () => {
 
         {
             const child = DI.child();
-            const single3 = await child.resolve<BarFar>(BarFar);
-            const single4 = await child.resolve<BarFar>(BarFar);
+            const single3 = child.resolve<BarFar>(BarFar);
+            const single4 = child.resolve<BarFar>(BarFar);
 
             expect(BarFar.Counter).to.eq(4);
             expect(single3.InstanceCounter).to.eq(1);
@@ -318,11 +287,11 @@ describe("Dependency injection", () => {
         }
     })
 
-    it("Per child container creation", async () => {
+    it("Per child container creation", () => {
 
         // root 
-        const single = await DI.resolve<Far>(Far);
-        const single2 = await DI.resolve<Far>(Far);
+        const single = DI.resolve<Far>(Far);
+        const single2 = DI.resolve<Far>(Far);
 
         expect(Far.Counter).to.eq(1);
         expect(single === single2).to.equal(true);
@@ -330,8 +299,8 @@ describe("Dependency injection", () => {
         // child
         {
             const child = DI.child();
-            const single3 = await child.resolve<Far>(Far);
-            const single4 = await child.resolve<Far>(Far);
+            const single3 = child.resolve<Far>(Far);
+            const single4 = child.resolve<Far>(Far);
 
             expect(Far.Counter).to.eq(2);
             expect(single3 === single4).to.equal(true);
@@ -339,26 +308,26 @@ describe("Dependency injection", () => {
         }
     });
 
-    it("Register type as self", async () => {
+    it("Register type as self", () => {
         DI.register(Zar).asSelf();
 
-        const zar = await DI.resolve(Zar);
+        const zar = DI.resolve(Zar);
         expect(zar).to.be.not.null;
         expect(zar.constructor.name).to.equal(Zar.name);
     })
 
-    it("Register type as implementation of another", async () => {
+    it("Register type as implementation of another", () => {
         class RegisterBase { }
         class RegisterImpl implements RegisterBase { }
 
         DI.register(RegisterImpl).as(RegisterBase);
 
-        const instance = await DI.resolve(RegisterBase);
+        const instance = DI.resolve(RegisterBase);
         expect(instance).to.be.not.null;
         expect(instance.constructor.name).to.equal(RegisterImpl.name);
     })
 
-    it("Register type as singleton", async () => {
+    it("Register type as singleton", () => {
         class RegisterBase {
             public static Count: number;
         }
@@ -374,8 +343,8 @@ describe("Dependency injection", () => {
 
         DI.register(RegisterImpl).as(RegisterBase);
 
-        const instance = await DI.resolve(RegisterBase);
-        const instance2 = await DI.resolve(RegisterBase);
+        const instance = DI.resolve(RegisterBase);
+        const instance2 = DI.resolve(RegisterBase);
 
         expect(instance).to.be.not.null;
         expect(instance2).to.be.not.null;
@@ -385,19 +354,44 @@ describe("Dependency injection", () => {
         expect(instance.constructor.name).to.equal(RegisterImpl.name);
     })
 
-    it("Should clear container", async () => {
+    it("Should resolve async", async () => {
+
+        DI.clear();
+
+        class Test extends AsyncResolveStrategy {
+
+            public Initialized = false;
+
+            public async resolveAsync() {
+               return new Promise<void>((res)=>{
+                   setTimeout(()=>{
+                       this.Initialized = true;
+                       res();
+                   }, 200);
+               })
+            }
+        }
+
+        const instance = await DI.resolve(Test);
+
+        expect(instance instanceof Test).to.be.true;
+        expect(DI.get("Test")).to.be.not.null;
+        expect(instance.Initialized).to.be.true;
+    })
+
+    it("Should clear container", () => {
         class Test { }
 
-        await DI.resolve(Test);
+        DI.resolve(Test);
         expect(DI.get("Test")).to.be.not.null;
         DI.clear();
         expect(DI.get("Test")).to.be.null;
     })
 
-    it("Should get if type is already resolved", async () => {
+    it("Should get if type is already resolved", () => {
         class Test { }
 
-        await DI.resolve(Test);
+        DI.resolve(Test);
 
         expect(DI.get("Test")).to.be.not.null;
     })
@@ -406,17 +400,11 @@ describe("Dependency injection", () => {
         expect(DI.get("Test")).to.be.null;
     })
 
-    it("Should throw if type is unknown", async () => {
-        expect(() => DI.resolve(undefined)).to.throw(ArgumentException, "argument `type` cannot be null or undefined");
+    it("Should throw if type is unknown", () => {
+        return expect(() => DI.resolve(undefined)).to.throw(ArgumentException, "argument `type` cannot be null or undefined");
     })
 
-    it("FrameworkStrategy should not resolve object", async () => {
-
-
-
-    });
-
-    it("Should resolve from factory func", async () => {
+    it("Should resolve from factory func", () => {
         class IDatabase { }
 
         class DatabaseImpl implements IDatabase { }
@@ -428,12 +416,12 @@ describe("Dependency injection", () => {
             return new DatabaseImpl();
         }).as(IDatabase);
 
-        const instance = await DI.resolve<IDatabase>(IDatabase, ["root@localhost"]);
+        const instance = DI.resolve<IDatabase>(IDatabase, ["root@localhost"]);
         expect(instance).to.be.not.null;
         expect(instance.constructor.name).to.eq("DatabaseImpl");
     })
 
-    it("Should resolve from factory func with no args", async () => {
+    it("Should resolve from factory func with no args", () => {
         class IDatabase { }
 
         class DatabaseImpl implements IDatabase { }
@@ -444,12 +432,12 @@ describe("Dependency injection", () => {
             return new DatabaseImpl();
         }).as(IDatabase);
 
-        const instance = await DI.resolve<IDatabase>(IDatabase);
+        const instance = DI.resolve<IDatabase>(IDatabase);
         expect(instance).to.be.not.null;
         expect(instance.constructor.name).to.eq("DatabaseImpl");
     })
 
-    it("Should inject options at resolve", async () => {
+    it("Should inject options at resolve", () => {
         class Bar { }
 
         @Inject(Bar)
@@ -466,7 +454,7 @@ describe("Dependency injection", () => {
             }
         }
 
-        const instance = await DI.resolve<Test>(Test, ["a", 1]);
+        const instance = DI.resolve<Test>(Test, ["a", 1]);
         expect(instance.A).to.eq("a");
         expect(instance.B).to.eq(1);
         expect(instance.Bar).to.be.not.null;

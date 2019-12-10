@@ -1,3 +1,4 @@
+import { IContainer } from './interfaces';
 import { ResolveType } from "./enums";
 import { Class, Factory } from "./types";
 
@@ -10,25 +11,26 @@ export interface IBind {
      *
      * @param type - base class that is being registered
      */
-    as<T>(type: Class<T>) :void;
+    as<T>(type: Class<T>): void;
 
     /**
      * self bind, class should be resolved by its name. Its default behaviour.
      */
-    asSelf() : void;
+    asSelf(): void;
 }
 
-export interface IContainer{
-    Cache : Map<string, any[] | any>;
-    Registry : Map<Class<any>, any[] | any>;
-    Strategies : IStrategy[];
+export interface IContainer {
+    Cache: Map<string, any[] | any>;
+    Registry: Map<Class<any>, any[] | any>;
 
-    clear() : void;
+    clear(): void;
     register<T>(implementation: Class<T> | Factory<T>): IBind;
-    child(): IContainer; 
-    get<T = {}>(service: string | Class<T>, parent? : boolean): T;
-    has<T>(service: string | Class<T>, parent? : boolean): boolean
-    resolve<T>(type: Class<T> | Factory<T> | T, options?: any[]): T extends T[] ? T[] | Promise<T[]> : Promise<T> | T
+    child(): IContainer;
+    get<T = {}>(service: string | Class<T>, parent?: boolean): T;
+    has<T>(service: string | Class<T>, parent?: boolean): boolean;
+
+    resolve<T>(type: Class<T> | Factory<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T> : T;
+    resolve<T>(type: TypedArray<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
 }
 
 /**
@@ -57,10 +59,21 @@ export interface IResolvedInjection {
  * do some work at object creation eg. initialize objects that inherits from same class
  * specific way but without need for factory function.
  *
- * Internally its used to initialize all framework internal modules.
  *
  * @see FrameworkModuleResolveStrategy implementation
  */
-export interface IStrategy {
-    resolve: (target: any, container: IContainer) => Promise<void> | void;
+// export interface IStrategy {
+//     resolve: (target: any, container: IContainer) => void;
+// }
+
+// export interface IAsyncStrategy {
+//     resolveA: (target: any, container: IContainer) => Promise<void>;
+// }
+
+export abstract class ResolveStrategy{
+   public abstract resolve(container: IContainer): void;
+}
+
+export abstract class AsyncResolveStrategy{
+    public abstract resolveAsync(container: IContainer): Promise<void>;
 }

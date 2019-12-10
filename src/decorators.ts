@@ -162,7 +162,7 @@ export function Autoinject(injectType?: Class) {
  *
  * ```
  */
-export function LazyInject(service: Constructor | string) {
+export function LazyInject(service: Class | string) {
     return (target?: any, key?: string) => {
         // property getter
         const getter = () => {

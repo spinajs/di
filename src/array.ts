@@ -3,8 +3,8 @@
 
 import { Class } from "./types";
 
-export class TypedArray<T> extends Array<T>{
-    constructor(public Type: Class<T>) {
+export class TypedArray<R> extends Array<R>{
+    constructor(public Type: Class<R>) {
         super()
     }
 }
