@@ -1,4 +1,3 @@
-import { IContainer } from './interfaces';
 import { ResolveType } from "./enums";
 import { Class, Factory } from "./types";
 

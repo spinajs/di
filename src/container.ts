@@ -25,8 +25,6 @@ export class Container implements IContainer {
    */
   private cache: Map<string, any[] | any>;
 
-
-
   /**
    * Parent container if avaible
    */
@@ -169,7 +167,7 @@ export class Container implements IContainer {
     const sourceType = (type instanceof TypedArray) ? type.Type : type;
 
     if (type instanceof TypedArray) {
-      const resolved = targetType.map(r => this.resolveType(r, sourceType));
+      const resolved = targetType.map(r => this.resolveType(r, r, options));
       if (resolved.some(r => r instanceof Promise)) {
         return Promise.all(resolved) as Promise<T[]>;
       }

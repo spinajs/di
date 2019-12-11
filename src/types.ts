@@ -10,4 +10,4 @@ export type Class<T = any> = Abstract<T> | Constructor<T>;
 
 export type Factory<T> = (container: IContainer, ...args: any[]) => T;
 export type ClassArray<T> = Array<Class<T>>;
- 
+   

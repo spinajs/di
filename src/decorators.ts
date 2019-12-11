@@ -5,7 +5,7 @@ import { DI } from "./root";
 
 export const DI_DESCRIPTION_SYMBOL = Symbol.for('DI_INJECTION_DESCRIPTOR');
 
-function injectable(callback?: (descriptor: IInjectDescriptor<any>, target: ArrayBuffer, propertyKey: string | symbol, indexOrDescriptor: number | PropertyDescriptor) => void): any {
+function AddDependency(callback?: (descriptor: IInjectDescriptor<any>, target: ArrayBuffer, propertyKey: string | symbol, indexOrDescriptor: number | PropertyDescriptor) => void): any {
     return (target: any, propertyKey: string | symbol, indexOrDescriptor: number | PropertyDescriptor) => {
         let descriptor: IInjectDescriptor<any> = target[DI_DESCRIPTION_SYMBOL];
         if (!descriptor) {
@@ -19,6 +19,42 @@ function injectable(callback?: (descriptor: IInjectDescriptor<any>, target: Arra
 
         if (callback) {
             callback(descriptor, target, propertyKey, indexOrDescriptor);
+        }
+    }
+}
+
+/**
+ * 
+ * Class with this decorator is automatically registered in DI container an can be resolved.
+ * NOTE: we dont need to register class before resolving. Injectable decorator is mainly used in extensions & plugins 
+ * to register implementation that can be resolved by framework or other parts without knowing about specific implementations eg.
+ * avaible database drivers.
+ * 
+ * @param as register class in DI container as something else.
+ * 
+ * @example
+ * ```typescript
+ * 
+ * @Injectable(OrmDriver)
+ * class MysqlOrmDriver{
+ * 
+ * // implementation ...
+ * }
+ * 
+ * 
+ * // somewhere else in code
+ * const avaibleDrivers = DI.resolve(Array.of(OrmDriver));
+ * 
+ * 
+ * ```
+ * 
+ */
+export function Injectable(as?: Class) {
+    return (target: any) => {
+        if (as) {
+            DI.register(target).as(as);
+        } else {
+            DI.register(target).asSelf();
         }
     }
 }
@@ -50,7 +86,7 @@ function injectable(callback?: (descriptor: IInjectDescriptor<any>, target: Arra
  * ```
  */
 export function Inject(...args: Class[]) {
-    return injectable((descriptor: IInjectDescriptor) => {
+    return AddDependency((descriptor: IInjectDescriptor) => {
         for (const a of args) {
             descriptor.inject.push({
                 all: false,
@@ -84,7 +120,7 @@ export function Inject(...args: Class[]) {
  * ```
  */
 export function InjectAll(...args: Class[]) {
-    return injectable((descriptor: IInjectDescriptor) => {
+    return AddDependency((descriptor: IInjectDescriptor) => {
         for (const a of args) {
             descriptor.inject.push({
                 all: true,
@@ -123,7 +159,7 @@ export function InjectAll(...args: Class[]) {
  * ```
  */
 export function Autoinject(injectType?: Class) {
-    return injectable((descriptor: IInjectDescriptor, target: any, propertyKey: string) => {
+    return AddDependency((descriptor: IInjectDescriptor, target: any, propertyKey: string) => {
         const type = Reflect.getMetadata('design:type', target, propertyKey);
         const isArray = type.name === 'Array';
 
@@ -143,7 +179,7 @@ export function Autoinject(injectType?: Class) {
 /**
  * Lazy injects service to object. Use only with class properties
  *
- * @param ser vice - class or name of service to inject
+ * @param service - class or name of service to inject
  *
  * @example
  * ```javascript
@@ -186,7 +222,7 @@ export function LazyInject(service: Class | string) {
  * Per child instance injection decorator - object is resolved once per container - child containers have own instances.
  */
 export function PerChildInstance() {
-    return injectable((descriptor: IInjectDescriptor) => {
+    return AddDependency((descriptor: IInjectDescriptor) => {
         descriptor.resolver = ResolveType.PerChildContainer;
     });
 }
@@ -195,7 +231,7 @@ export function PerChildInstance() {
  * NewInstance injection decorator - every time class is injected - its created from scratch
  */
 export function NewInstance() {
-    return injectable((descriptor: IInjectDescriptor) => {
+    return AddDependency((descriptor: IInjectDescriptor) => {
         descriptor.resolver = ResolveType.NewInstance;
     });
 }
@@ -204,5 +240,5 @@ export function NewInstance() {
  * Singleton injection decorator - every time class is resolved - its created only once globally ( even in child DI containers )
  */
 export function Singleton() {
-    return injectable();
+    return AddDependency();
 }

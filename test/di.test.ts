@@ -2,7 +2,7 @@ import { ArgumentException } from '@spinajs/exceptions'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
-import { AsyncResolveStrategy, Autoinject, Container, DI, Inject, LazyInject, NewInstance, PerChildInstance, ResolveStrategy, Singleton } from '../src';
+import { AsyncResolveStrategy, Autoinject, Container, DI, Inject, LazyInject, NewInstance, PerChildInstance, ResolveStrategy, Singleton, Injectable } from '../src';
 
 const expect = chai.expect;
 chai.use(chaiAsPromised);
@@ -175,8 +175,77 @@ describe("Dependency injection", () => {
         const root = DI.RootContainer;
         expect(instance.container === root).to.be.true;
         expect(instance2.container === root).to.be.true;
-
     })
+
+    it("Injectable should register class", () => {
+
+        @Injectable()
+        class InjectableTest {
+
+        }
+
+        const registry = DI.RootContainer.Registry;
+
+        expect(registry).to.be.an("Map").that.have.length(1);
+        expect(registry.get(InjectableTest)).to.be.an("array").that.have.length(1);
+        expect(registry.get(InjectableTest)[0]).to.be.not.null;
+        expect(DI.resolve(InjectableTest)).to.be.not.null;
+    })
+
+    it("Injectable should register class as another", () => {
+
+        class InjectableBase {
+
+        }
+
+        @Injectable(InjectableBase)
+        class InjectableTest {
+
+        }
+
+
+
+        const registry = DI.RootContainer.Registry;
+
+        expect(registry).to.be.an("Map").that.have.length(1);
+        expect(registry.get(InjectableBase)).to.be.an("array").that.have.length(1);
+        expect(registry.get(InjectableBase)[0]).to.be.not.null;
+        expect(registry.get(InjectableBase)[0].name).to.eq("InjectableTest");
+        expect(DI.resolve(InjectableBase)).to.be.instanceOf(InjectableTest)
+ 
+    })
+
+    it("Injectable should register multiple class as another", () => {
+
+        class InjectableBase {
+
+        }
+
+        @Injectable(InjectableBase)
+        class InjectableTest {
+
+        }
+
+        @Injectable(InjectableBase)
+        class InjectableTest2 {
+
+        }
+
+
+
+        const registry = DI.RootContainer.Registry;
+
+        expect(registry).to.be.an("Map").that.have.length(1);
+        expect(registry.get(InjectableBase)).to.be.an("array").that.have.length(2);
+        expect(registry.get(InjectableBase)[0]).to.be.not.null;
+        expect(registry.get(InjectableBase)[0].name).to.eq("InjectableTest");
+
+        const services = DI.resolve(Array.ofType(InjectableBase));
+        expect(services).to.be.an("array").that.have.length(2);
+        expect(services[0]).to.be.instanceOf(InjectableTest);
+        expect(services[1]).to.be.instanceOf(InjectableTest2);
+    })
+
 
     it("Inject child container", () => {
         const child = DI.child();
@@ -209,8 +278,8 @@ describe("Dependency injection", () => {
         const val = DI.resolve(Array.ofType(SampleBaseClass));
         expect(val).to.be.not.null;
         expect(val.length).to.eq(2);
-        expect(val[0] instanceof SampleBaseClass).to.be.true;
-        expect(val[1] instanceof SampleBaseClass).to.be.true;
+        expect(val[0] instanceof SampleImplementation1).to.be.true;
+        expect(val[1] instanceof SampleImplementation2).to.be.true;
 
 
     });
@@ -363,12 +432,12 @@ describe("Dependency injection", () => {
             public Initialized = false;
 
             public async resolveAsync() {
-               return new Promise<void>((res)=>{
-                   setTimeout(()=>{
-                       this.Initialized = true;
-                       res();
-                   }, 200);
-               })
+                return new Promise<void>((res) => {
+                    setTimeout(() => {
+                        this.Initialized = true;
+                        res();
+                    }, 200);
+                })
             }
         }
 
