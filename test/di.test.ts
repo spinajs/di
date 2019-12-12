@@ -534,5 +534,77 @@ describe("Dependency injection", () => {
         const child = DI.RootContainer.child();
         expect(child).to.be.not.null;
     });
+
+    it("Should check if registered", ()=>{
+        @Injectable()
+        //@ts-ignore
+        class FooBar{}
+
+        class ZarFar{}
+
+        expect(DI.check(FooBar)).to.eq(true);
+        expect(DI.check(ZarFar)).to.eq(false);
+    })
+
+    it("Should check if registered with parent",()=>{
+
+        @Injectable()
+        //@ts-ignore
+        class FooBar{}
+
+        class ZarFar{}
+
+        {
+            const child = DI.child();
+
+            expect(child.check(FooBar, true)).to.eq(true);
+            expect(child.check(FooBar, false)).to.eq(false);
+
+            expect(child.check(ZarFar,true)).to.eq(false);
+            expect(child.check(ZarFar, false)).to.eq(false);
+
+        }
+
+
+    })
+
+    it("Should throw if resolving with check",()=>{
+
+        class FooBar{}
+        expect(() =>{ 
+            DI.resolve(FooBar, true);
+        }).to.throw;
+
+    });
+
+    it("Should get All with Array.typeOf", () =>{ 
+
+
+        class InjectableBase {
+
+        }
+
+        @Injectable(InjectableBase)
+        //@ts-ignore
+        class InjectableTest {
+
+        }
+
+        @Injectable(InjectableBase)
+        //@ts-ignore
+        class InjectableTest2 {
+
+        }
+
+        DI.resolve(Array.ofType(InjectableBase));
+
+        const getted = DI.get(Array.ofType(InjectableBase));
+
+        expect(getted.length).to.be.an("array").that.have.length(2);
+        expect(getted[0]).to.be.instanceOf(InjectableTest);
+        expect(getted[1]).to.be.instanceOf(InjectableTest2);
+
+
+    })
 });
 

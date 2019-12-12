@@ -27,6 +27,7 @@ export interface IContainer {
     child(): IContainer;
     get<T = {}>(service: string | Class<T>, parent?: boolean): T;
     has<T>(service: string | Class<T>, parent?: boolean): boolean;
+    check<T>(service : Class<T>, parent? : boolean) : boolean;
 
     resolve<T>(type: Class<T> | Factory<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T> : T;
     resolve<T>(type: TypedArray<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T[]> : T[];

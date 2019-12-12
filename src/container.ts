@@ -114,6 +114,18 @@ export class Container implements IContainer {
     return null;
   }
 
+  public check<T>(service : Class<T>, parent = true) : boolean{
+    
+    if(this.registry.has(service)){
+      return true;
+    }else if(this.parent && parent)
+    {
+      return this.parent.check(service);
+    }
+
+    return false;
+  }
+
   /**
    * Checks if service is already resolved and exists in container cache.
    * NOTE: check is only valid for classes that are singletons.
@@ -155,9 +167,14 @@ export class Container implements IContainer {
    * 
    * @param type typed array of specified type. since TS does not expose array metadata and type its uses TypedArray<T> consctruct
    * @param options options passed to constructor / factory
+   * @param check - strict check if serivice is registered in container before resolving. Default behavior is to not check and resolve
+   * 
    */
-  public resolve<T>(type: TypedArray<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
-  public resolve<T>(type: Class<T> | Factory<T> | TypedArray<T>, options?: any[]): Promise<T | T[]> | T | T[] {
+  public resolve<T>(type: Class<T> | Factory<T>, check? : boolean) :T extends AsyncResolveStrategy ? Promise<T>  : T;
+  public resolve<T>(type: Class<T> | Factory<T>, options? : any[], check? : boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
+  public resolve<T>(type: TypedArray<T>, options?: any[], check? : boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
+  public resolve<T>(type: TypedArray<T>, check? : boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
+  public resolve<T>(type: Class<T> | Factory<T> | TypedArray<T>, options?: any[] | boolean, check? : boolean): Promise<T | T[]> | T | T[] {
 
     if (_.isNil(type)) {
       throw new ArgumentException('argument `type` cannot be null or undefined');
@@ -167,7 +184,7 @@ export class Container implements IContainer {
     const sourceType = (type instanceof TypedArray) ? type.Type : type;
 
     if (type instanceof TypedArray) {
-      const resolved = targetType.map(r => this.resolveType(r, r, options));
+      const resolved = targetType.map(r => this.resolveType(r, r, options, check));
       if (resolved.some(r => r instanceof Promise)) {
         return Promise.all(resolved) as Promise<T[]>;
       }
@@ -175,13 +192,19 @@ export class Container implements IContainer {
       return resolved as T[];
     }
 
-    return this.resolveType(targetType[0], sourceType, options);
+    return this.resolveType(targetType[0], sourceType, options, check);
   }
 
-  private resolveType<T>(type: Class<T> | Factory<T>, cacheKey: Class<T>, options?: any[]): Promise<T> | T {
+  private resolveType<T>(type: Class<T> | Factory<T>, cacheKey: Class<T>, options?: any[] | boolean, check? : boolean): Promise<T> | T {
     const self = this;
     const descriptor = _extractDescriptor<T>(type);
     const deps = _resolveDeps(descriptor.inject);
+
+    if(typeof options === "boolean" && options === true || check === true){
+      if(!this.Registry.has(type)){
+        throw new Error(`Type ${type.name} is not registered at container`);
+      }
+    }
 
     if (deps instanceof Promise) {
       return deps.then(resolvedDependencies => {
