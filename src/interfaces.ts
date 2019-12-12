@@ -25,7 +25,8 @@ export interface IContainer {
     clear(): void;
     register<T>(implementation: Class<T> | Factory<T>): IBind;
     child(): IContainer;
-    get<T = {}>(service: string | Class<T>, parent?: boolean): T;
+    get<T>(service: string | Class<T>, parent?: boolean): T;
+    get<T>(service : TypedArray<T>, parent?: boolean): T[];
     has<T>(service: string | Class<T>, parent?: boolean): boolean;
     check<T>(service : Class<T>, parent? : boolean) : boolean;
 

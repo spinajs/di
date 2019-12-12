@@ -61,6 +61,14 @@ export namespace DI {
     }
 
     /**
+     * Checks if service is registered in container.
+     * 
+     * @param service service class object to check
+     */
+    export function check<T>(service: Class<T>) : boolean{
+        return RootContainer.check(service);
+    }
+    /**
      * Creates child DI container.
      *
      */

@@ -603,7 +603,41 @@ describe("Dependency injection", () => {
         expect(getted.length).to.be.an("array").that.have.length(2);
         expect(getted[0]).to.be.instanceOf(InjectableTest);
         expect(getted[1]).to.be.instanceOf(InjectableTest2);
+    })
 
+    it("Should throw when resolve with check",()=>{
+
+        class BarFart{}
+
+        expect(()=>{
+            DI.resolve(BarFart, true);
+        }).should.throw;
+
+        expect(()=>{
+            DI.resolve(BarFart, { a: 1}, true);
+        }).should.throw;
+
+    })
+
+    it("Should register singleton at resolve", ()=>{
+
+        class PisFart{}
+
+        DI.resolve(PisFart);
+
+        expect(DI.check(PisFart)).to.eq(true);
+        
+    })
+
+    it("Should not register at resolve @NewInstance",()=>{
+
+        @NewInstance()
+        //@ts-ignore
+        class POFart{}
+
+        DI.resolve(POFart);
+
+        expect(DI.check(POFart)).to.eq(false);
 
     })
 });
