@@ -2,7 +2,7 @@ import { ArgumentException } from '@spinajs/exceptions'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
-import { AsyncResolveStrategy, Autoinject, Container, DI, Inject, LazyInject, NewInstance, PerChildInstance, ResolveStrategy, Singleton, Injectable } from '../src';
+import { AsyncResolveStrategy, Autoinject, Container, DI, Inject, Injectable, LazyInject, NewInstance, PerChildInstance, ResolveStrategy, Singleton } from '../src';
 
 const expect = chai.expect;
 chai.use(chaiAsPromised);
@@ -170,9 +170,9 @@ describe("Dependency injection", () => {
     })
 
     it("Inject container", () => {
+        const root = DI.RootContainer;
         const instance = DI.resolve<TestInjectContainerAsParameter>(TestInjectContainerAsParameter);
         const instance2 = DI.resolve<TestInjectContainerAsProperty>(TestInjectContainerAsProperty);
-        const root = DI.RootContainer;
         expect(instance.container === root).to.be.true;
         expect(instance2.container === root).to.be.true;
     })
@@ -212,7 +212,7 @@ describe("Dependency injection", () => {
         expect(registry.get(InjectableBase)[0]).to.be.not.null;
         expect(registry.get(InjectableBase)[0].name).to.eq("InjectableTest");
         expect(DI.resolve(InjectableBase)).to.be.instanceOf(InjectableTest)
- 
+
     })
 
     it("Injectable should register multiple class as another", () => {
@@ -535,24 +535,24 @@ describe("Dependency injection", () => {
         expect(child).to.be.not.null;
     });
 
-    it("Should check if registered", ()=>{
+    it("Should check if registered", () => {
         @Injectable()
-        //@ts-ignore
-        class FooBar{}
+        // @ts-ignore
+        class FooBar { }
 
-        class ZarFar{}
+        class ZarFar { }
 
         expect(DI.check(FooBar)).to.eq(true);
         expect(DI.check(ZarFar)).to.eq(false);
     })
 
-    it("Should check if registered with parent",()=>{
+    it("Should check if registered with parent", () => {
 
         @Injectable()
-        //@ts-ignore
-        class FooBar{}
+        // @ts-ignore
+        class FooBar { }
 
-        class ZarFar{}
+        class ZarFar { }
 
         {
             const child = DI.child();
@@ -560,7 +560,7 @@ describe("Dependency injection", () => {
             expect(child.check(FooBar, true)).to.eq(true);
             expect(child.check(FooBar, false)).to.eq(false);
 
-            expect(child.check(ZarFar,true)).to.eq(false);
+            expect(child.check(ZarFar, true)).to.eq(false);
             expect(child.check(ZarFar, false)).to.eq(false);
 
         }
@@ -568,16 +568,16 @@ describe("Dependency injection", () => {
 
     })
 
-    it("Should throw if resolving with check",()=>{
+    it("Should throw if resolving with check", () => {
 
-        class FooBar{}
-        expect(() =>{ 
+        class FooBar { }
+        expect(() => {
             DI.resolve(FooBar, true);
         }).to.throw;
 
     });
 
-    it("Should get All with Array.typeOf", () =>{ 
+    it("Should get All with Array.typeOf", () => {
 
 
         class InjectableBase {
@@ -585,13 +585,13 @@ describe("Dependency injection", () => {
         }
 
         @Injectable(InjectableBase)
-        //@ts-ignore
+        // @ts-ignore
         class InjectableTest {
 
         }
 
         @Injectable(InjectableBase)
-        //@ts-ignore
+        // @ts-ignore
         class InjectableTest2 {
 
         }
@@ -600,40 +600,40 @@ describe("Dependency injection", () => {
 
         const getted = DI.get(Array.ofType(InjectableBase));
 
-        expect(getted.length).to.be.an("array").that.have.length(2);
+        expect(getted).to.be.an("array").that.have.length(2);
         expect(getted[0]).to.be.instanceOf(InjectableTest);
         expect(getted[1]).to.be.instanceOf(InjectableTest2);
     })
 
-    it("Should throw when resolve with check",()=>{
+    it("Should throw when resolve with check", () => {
 
-        class BarFart{}
+        class BarFart { }
 
-        expect(()=>{
+        expect(() => {
             DI.resolve(BarFart, true);
-        }).should.throw;
+        }).to.throw();
 
-        expect(()=>{
-            DI.resolve(BarFart, { a: 1}, true);
-        }).should.throw;
+        expect(() => {
+            DI.resolve(BarFart, [1], true);
+        }).to.throw();
 
     })
 
-    it("Should register singleton at resolve", ()=>{
+    it("Should register singleton at resolve", () => {
 
-        class PisFart{}
+        class PisFart { }
 
         DI.resolve(PisFart);
 
         expect(DI.check(PisFart)).to.eq(true);
-        
+
     })
 
-    it("Should not register at resolve @NewInstance",()=>{
+    it("Should not register at resolve @NewInstance", () => {
 
         @NewInstance()
-        //@ts-ignore
-        class POFart{}
+        // @ts-ignore
+        class POFart { }
 
         DI.resolve(POFart);
 

@@ -25,13 +25,18 @@ export interface IContainer {
     clear(): void;
     register<T>(implementation: Class<T> | Factory<T>): IBind;
     child(): IContainer;
+    get<T>(service: TypedArray<T>, parent?: boolean): T[];
     get<T>(service: string | Class<T>, parent?: boolean): T;
-    get<T>(service : TypedArray<T>, parent?: boolean): T[];
-    has<T>(service: string | Class<T>, parent?: boolean): boolean;
-    check<T>(service : Class<T>, parent? : boolean) : boolean;
+    get<T>(service: string | Class<T> | TypedArray<T>, parent?: boolean): T | T[];
 
-    resolve<T>(type: Class<T> | Factory<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T> : T;
-    resolve<T>(type: TypedArray<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
+
+    has<T>(service: string | Class<T>, parent?: boolean): boolean;
+    check<T>(service: Class<T>, parent?: boolean): boolean;
+
+    resolve<T>(type: Class<T> | Factory<T>, options?: any[] | boolean, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
+    resolve<T>(type: TypedArray<T>, options?: any[] | boolean, check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
+    resolve<T>(type: Class<T> | Factory<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
+    resolve<T>(type: TypedArray<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
 }
 
 /**
@@ -71,10 +76,10 @@ export interface IResolvedInjection {
 //     resolveA: (target: any, container: IContainer) => Promise<void>;
 // }
 
-export abstract class ResolveStrategy{
-   public abstract resolve(container: IContainer): void;
+export abstract class ResolveStrategy {
+    public abstract resolve(container: IContainer): void;
 }
 
-export abstract class AsyncResolveStrategy{
+export abstract class AsyncResolveStrategy {
     public abstract resolveAsync(container: IContainer): Promise<void>;
 }

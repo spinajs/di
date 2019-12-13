@@ -33,10 +33,12 @@ export namespace DI {
      * @return - class instance
      * @throws { ArgumentException } if type is null or undefined
      */
-    export function resolve<T>(type: Class<T> | Factory<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T> : T;
-    export function resolve<T>(type: TypedArray<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
-    export function resolve<T>(type: Class<T> | Factory<T> | TypedArray<T>, options?: any[]): Promise<T | T[]> | T | T[] {
-        return RootContainer.resolve<T>(type as any, options);
+    export function resolve<T>(type: Class<T> | Factory<T>, check? : boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
+    export function resolve<T>(type: TypedArray<T>,check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
+    export function resolve<T>(type: Class<T> | Factory<T>, options?: any[] | boolean, check? : boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
+    export function resolve<T>(type: TypedArray<T>, options?: any[] | boolean, check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
+    export function resolve<T>(type: Class<T> | Factory<T> | TypedArray<T>, options?: any[] | boolean, check?: boolean): Promise<T | T[]> | T | T[] {
+        return RootContainer.resolve<T>(type as any, options, check);
     }
 
     /**
@@ -45,7 +47,9 @@ export namespace DI {
      * @param serviceName - name of service to get
      * @returns { null | T} - null if no service has been resolved at given name
      */
-    export function get<T>(serviceName: string | Class<T>): T {
+    export function get<T>(serviceName: TypedArray<T>): T[];
+    export function get<T>(serviceName: string | Class<T>): T;
+    export function get<T>(serviceName: string | Class<T> | TypedArray<T>): T | T[] {
         return RootContainer.get(serviceName) as T;
     }
 

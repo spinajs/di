@@ -102,24 +102,39 @@ export class Container implements IContainer {
    * @param serviceName - name of service to get
    * @returns { null | T} - null if no service has been resolved at given name
    */
-  public get<T = {}>(service: string | Class<T>, parent = true): T {
-    const identifier = typeof service === 'string' ? service : service.constructor.name;
+  public get<T>(service: TypedArray<T>, parent?: boolean): T[];
+  public get<T>(service: string | Class<T>, parent?: boolean): T;
+  public get<T>(service: string | Class<T> | TypedArray<T>, parent = true): T | T[] {
 
-    if (this.cache.has(identifier)) {
-      return this.cache.get(identifier);
-    } else if (this.parent && parent) {
-      return this.parent.get(service, parent);
+    const self = this;
+    const identifier = (typeof service === 'string') ? service : (service instanceof TypedArray) ? this.Registry.get(service.Type) : this.Registry.get(service);
+
+    if (typeof identifier === 'string') {
+      return _get(identifier);
     }
 
-    return null;
+    if (service instanceof TypedArray) {
+      return (identifier as Array<Class<T>>).map(t => _get(t.name));
+    }
+
+    return _get(identifier[0].name);
+
+    function _get(i: string) {
+      if (self.cache.has(i)) {
+        return self.cache.get(i);
+      } else if (self.parent && parent) {
+        return self.parent.get(i, parent);
+      }
+
+      return null;
+    }
   }
 
-  public check<T>(service : Class<T>, parent = true) : boolean{
-    
-    if(this.registry.has(service)){
+  public check<T>(service: Class<T>, parent = true): boolean {
+
+    if (this.registry.has(service)) {
       return true;
-    }else if(this.parent && parent)
-    {
+    } else if (this.parent && parent) {
       return this.parent.check(service);
     }
 
@@ -159,7 +174,8 @@ export class Container implements IContainer {
    * @param type what to resolve, can be class definition or factory function
    * @param options options passed to constructor / factory
    */
-  public resolve<T>(type: Class<T> | Factory<T>, options?: any[]): T extends AsyncResolveStrategy ? Promise<T> : T;
+  public resolve<T>(type: Class<T> | Factory<T>, options?: any[], check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
+  public resolve<T>(type: Class<T> | Factory<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
 
   /**
    * 
@@ -170,21 +186,33 @@ export class Container implements IContainer {
    * @param check - strict check if serivice is registered in container before resolving. Default behavior is to not check and resolve
    * 
    */
-  public resolve<T>(type: Class<T> | Factory<T>, check? : boolean) :T extends AsyncResolveStrategy ? Promise<T>  : T;
-  public resolve<T>(type: Class<T> | Factory<T>, options? : any[], check? : boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
-  public resolve<T>(type: TypedArray<T>, options?: any[], check? : boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
-  public resolve<T>(type: TypedArray<T>, check? : boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
-  public resolve<T>(type: Class<T> | Factory<T> | TypedArray<T>, options?: any[] | boolean, check? : boolean): Promise<T | T[]> | T | T[] {
+  public resolve<T>(type: TypedArray<T>, options?: any[], check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
+  public resolve<T>(type: TypedArray<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
+
+  /**
+   * 
+   * @param type type to resolve
+   * @param options options passed to constructor / factory
+   * @param check strict check if serivice is registered in container before resolving. Default behavior is to not check and resolve
+   */
+  public resolve<T>(type: Class<T> | Factory<T> | TypedArray<T>, options?: any[] | boolean, check?: boolean): Promise<T | T[]> | T | T[] {
 
     if (_.isNil(type)) {
       throw new ArgumentException('argument `type` cannot be null or undefined');
     }
 
+    const opt = (typeof options === "boolean") ? null : options;
     const targetType = (type instanceof TypedArray) ? this.registry.get(type.Type) || [type.Type] : this.registry.get(type) || [type];
     const sourceType = (type instanceof TypedArray) ? type.Type : type;
 
+    if (typeof options === "boolean" && options === true || check === true) {
+      if (!this.Registry.has(sourceType)) {
+        throw new Error(`Type ${sourceType.name} is not registered at container`);
+      }
+    }
+
     if (type instanceof TypedArray) {
-      const resolved = targetType.map(r => this.resolveType(r, r, options, check));
+      const resolved = targetType.map(r => this.resolveType(sourceType, r, r, opt));
       if (resolved.some(r => r instanceof Promise)) {
         return Promise.all(resolved) as Promise<T[]>;
       }
@@ -192,26 +220,22 @@ export class Container implements IContainer {
       return resolved as T[];
     }
 
-    return this.resolveType(targetType[0], sourceType, options, check);
+    return this.resolveType(sourceType, targetType[0], sourceType, opt);
   }
 
-  private resolveType<T>(type: Class<T> | Factory<T>, cacheKey: Class<T>, options?: any[] | boolean, check? : boolean): Promise<T> | T {
+  private resolveType<T>(sourceType: Class<T>, targetType: Class<T> | Factory<T>, cacheKey: Class<T>, options?: any[]): Promise<T> | T {
     const self = this;
-    const descriptor = _extractDescriptor<T>(type);
+    const descriptor = _extractDescriptor<T>(targetType);
     const deps = _resolveDeps(descriptor.inject);
 
-    if(typeof options === "boolean" && options === true || check === true){
-      if(!this.Registry.has(type)){
-        throw new Error(`Type ${type.name} is not registered at container`);
-      }
-    }
+
 
     if (deps instanceof Promise) {
       return deps.then(resolvedDependencies => {
-        return _resolve(descriptor, type, resolvedDependencies);
+        return _resolve(descriptor, targetType, resolvedDependencies);
       }).then(_setCache);
     } else {
-      const resInstance = _resolve(descriptor, type, deps as IResolvedInjection[]);
+      const resInstance = _resolve(descriptor, targetType, deps as IResolvedInjection[]);
       if (resInstance instanceof Promise) {
         return resInstance.then(_setCache);
       }
@@ -224,11 +248,11 @@ export class Container implements IContainer {
 
     function _setCache(r: any) {
       if (descriptor.resolver === ResolveType.Singleton) {
-        if (!self.has(type, true)) {
+        if (!self.has(targetType, true)) {
           self.Cache.set(cacheKey.name, r);
         }
       } else if (descriptor.resolver === ResolveType.PerChildContainer) {
-        if (!self.has(type, false)) {
+        if (!self.has(targetType, false)) {
           self.Cache.set(cacheKey.name, r);
         }
       }
@@ -236,14 +260,20 @@ export class Container implements IContainer {
     }
 
     function _resolve(d: IInjectDescriptor, t: Class<T> | Factory<T>, i: IResolvedInjection[]) {
-      switch (d.resolver) {
-        case ResolveType.NewInstance:
-          return _getNewInstance(t, i);
-        case ResolveType.Singleton:
-          return _getCachedInstance(cacheKey, true) || _getNewInstance(t, i);
-        case ResolveType.PerChildContainer:
-          return _getCachedInstance(cacheKey, false) || _getNewInstance(t, i);
+
+      if (d.resolver === ResolveType.NewInstance) {
+        return _getNewInstance(t, i);
       }
+
+      if (!self.Registry.has(sourceType)) {
+        self.Registry.set(sourceType, [t]);
+      } else {
+        if (!self.Registry.get(sourceType).find(tt => tt.name === t.name)) {
+          self.Registry.set(sourceType, self.Registry.get(sourceType).concat(t));
+        }
+      }
+
+     return  _getCachedInstance(cacheKey, d.resolver === ResolveType.Singleton ? true : false) || _getNewInstance(t, i);
     }
 
     function _extractDescriptor<T>(type: Abstract<T> | Constructor<T> | Factory<T>) {
