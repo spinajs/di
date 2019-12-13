@@ -180,6 +180,7 @@ describe("Dependency injection", () => {
     it("Injectable should register class", () => {
 
         @Injectable()
+        // @ts-ignore
         class InjectableTest {
 
         }
@@ -199,6 +200,7 @@ describe("Dependency injection", () => {
         }
 
         @Injectable(InjectableBase)
+        // @ts-ignore
         class InjectableTest {
 
         }
@@ -222,11 +224,13 @@ describe("Dependency injection", () => {
         }
 
         @Injectable(InjectableBase)
+        // @ts-ignore
         class InjectableTest {
 
         }
 
         @Injectable(InjectableBase)
+        // @ts-ignore
         class InjectableTest2 {
 
         }
