@@ -10,7 +10,7 @@ export interface IBind {
      *
      * @param type - base class that is being registered
      */
-    as<T>(type: Class<T>): void;
+    as<T>(type: Class<T> | string): void;
 
     /**
      * self bind, class should be resolved by its name. Its default behaviour.
@@ -20,7 +20,7 @@ export interface IBind {
 
 export interface IContainer {
     Cache: Map<string, any[] | any>;
-    Registry: Map<Class<any>, any[] | any>;
+    Registry: Map<Class<any> | string, any[] | any>;
 
     clear(): void;
     register<T>(implementation: Class<T> | Factory<T>): IBind;
@@ -31,8 +31,10 @@ export interface IContainer {
 
 
     has<T>(service: string | Class<T>, parent?: boolean): boolean;
-    check<T>(service: Class<T>, parent?: boolean): boolean;
+    check<T>(service: Class<T> | string, parent?: boolean): boolean;
 
+    resolve<T>(type: string, options?: any[], check?: boolean): T;
+    resolve<T>(type: string, check?: boolean): T;
     resolve<T>(type: Class<T> | Factory<T>, options?: any[] | boolean, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
     resolve<T>(type: TypedArray<T>, options?: any[] | boolean, check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
     resolve<T>(type: Class<T> | Factory<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;

@@ -49,7 +49,7 @@ function AddDependency(callback?: (descriptor: IInjectDescriptor<any>, target: A
  * ```
  * 
  */
-export function Injectable(as?: Class) {
+export function Injectable(as?: Class | string) {
     return (target: any) => {
         if (as) {
             DI.register(target).as(as);

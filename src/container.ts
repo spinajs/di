@@ -17,7 +17,7 @@ export class Container implements IContainer {
    * eg. that class IConfiguration should be resolved as DatabaseConfiguration etc.
    * @access private
    */
-  private registry: Map<Class<any>, Array<Class<any>>>;
+  private registry: Map<Class<any> | string, Array<Class<any>>>;
 
   /**
    * Singletons cache, objects that should be created only once are stored here.
@@ -38,7 +38,7 @@ export class Container implements IContainer {
   }
 
 
-  public get Registry(): Map<Class<any>, Array<Class<any>>> {
+  public get Registry(): Map<Class<any> | string, Array<Class<any>>> {
     return this.registry;
   }
 
@@ -74,7 +74,7 @@ export class Container implements IContainer {
     const self = this;
 
     return {
-      as(type: Class<T>) {
+      as(type: Class<T> | string) {
         if (self.registry.has(type)) {
           self.registry.get(type).push(implementation);
         } else {
@@ -130,7 +130,7 @@ export class Container implements IContainer {
     }
   }
 
-  public check<T>(service: Class<T>, parent = true): boolean {
+  public check<T>(service: Class<T> | string, parent = true): boolean {
 
     if (this.registry.has(service)) {
       return true;
@@ -174,6 +174,16 @@ export class Container implements IContainer {
    * @param type what to resolve, can be class definition or factory function
    * @param options options passed to constructor / factory
    */
+  public resolve<T>(type: string, options?: any[], check?: boolean): T;
+  public resolve<T>(type: string, check?: boolean): T;
+
+  /**
+   * 
+   * Resolves single instance of class
+   * 
+   * @param type what to resolve, can be class definition or factory function
+   * @param options options passed to constructor / factory
+   */
   public resolve<T>(type: Class<T> | Factory<T>, options?: any[], check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
   public resolve<T>(type: Class<T> | Factory<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
 
@@ -195,24 +205,28 @@ export class Container implements IContainer {
    * @param options options passed to constructor / factory
    * @param check strict check if serivice is registered in container before resolving. Default behavior is to not check and resolve
    */
-  public resolve<T>(type: Class<T> | Factory<T> | TypedArray<T>, options?: any[] | boolean, check?: boolean): Promise<T | T[]> | T | T[] {
+  public resolve<T>(type: Class<T> | Factory<T> | TypedArray<T> | string, options?: any[] | boolean, check?: boolean): Promise<T | T[]> | T | T[] {
 
     if (_.isNil(type)) {
       throw new ArgumentException('argument `type` cannot be null or undefined');
     }
 
     const opt = (typeof options === "boolean") ? null : options;
-    const targetType = (type instanceof TypedArray) ? this.registry.get(type.Type) || [type.Type] : this.registry.get(type) || [type];
+    const targetType = (type instanceof TypedArray) ? this.registry.get(type.Type) || [type.Type] : this.registry.get(type) || ((typeof type === 'string') ? null : [type]);
     const sourceType = (type instanceof TypedArray) ? type.Type : type;
 
     if (typeof options === "boolean" && options === true || check === true) {
       if (!this.Registry.has(sourceType)) {
-        throw new Error(`Type ${sourceType.name} is not registered at container`);
+        throw new Error(`Type ${sourceType} is not registered at container`);
       }
     }
 
+    if(typeof sourceType === 'string'){
+      return this.resolveType(sourceType, targetType[0], sourceType, opt);
+    }
+
     if (type instanceof TypedArray) {
-      const resolved = targetType.map(r => this.resolveType(sourceType, r, r, opt));
+      const resolved = targetType.map(r => this.resolveType(sourceType, r, r.name, opt));
       if (resolved.some(r => r instanceof Promise)) {
         return Promise.all(resolved) as Promise<T[]>;
       }
@@ -220,10 +234,10 @@ export class Container implements IContainer {
       return resolved as T[];
     }
 
-    return this.resolveType(sourceType, targetType[0], sourceType, opt);
+    return this.resolveType(sourceType, targetType[0], sourceType.name, opt);
   }
 
-  private resolveType<T>(sourceType: Class<T>, targetType: Class<T> | Factory<T>, cacheKey: Class<T>, options?: any[]): Promise<T> | T {
+  private resolveType<T>(sourceType: Class<T> | string, targetType: Class<T> | Factory<T>, cacheKey: string, options?: any[]): Promise<T> | T {
     const self = this;
     const descriptor = _extractDescriptor<T>(targetType);
     const deps = _resolveDeps(descriptor.inject);
@@ -249,11 +263,11 @@ export class Container implements IContainer {
     function _setCache(r: any) {
       if (descriptor.resolver === ResolveType.Singleton) {
         if (!self.has(targetType, true)) {
-          self.Cache.set(cacheKey.name, r);
+          self.Cache.set(cacheKey, r);
         }
       } else if (descriptor.resolver === ResolveType.PerChildContainer) {
         if (!self.has(targetType, false)) {
-          self.Cache.set(cacheKey.name, r);
+          self.Cache.set(cacheKey, r);
         }
       }
       return r;
@@ -273,7 +287,7 @@ export class Container implements IContainer {
         }
       }
 
-     return  _getCachedInstance(cacheKey, d.resolver === ResolveType.Singleton ? true : false) || _getNewInstance(t, i);
+      return _getCachedInstance(cacheKey, d.resolver === ResolveType.Singleton ? true : false) || _getNewInstance(t, i);
     }
 
     function _extractDescriptor<T>(type: Abstract<T> | Constructor<T> | Factory<T>) {
@@ -309,8 +323,8 @@ export class Container implements IContainer {
     }
 
     function _getCachedInstance(e: any, parent: boolean): any {
-      if (self.has(e.name, parent)) {
-        return self.get(e.name, parent);
+      if (self.has(e, parent)) {
+        return self.get(e, parent);
       }
 
       return null;

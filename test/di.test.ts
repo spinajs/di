@@ -644,5 +644,19 @@ describe("Dependency injection", () => {
         expect(DI.check(POFart)).to.eq(false);
 
     })
+
+    it("Should register class with as string name", ()=>{
+
+        class FuPIS{}
+
+        DI.register(FuPIS).as("FuPIS");
+
+        expect(DI.check("FuPIS")).to.eq(true);
+
+        const instance = DI.resolve("FuPIS");
+        expect(instance).to.be.not.null;
+
+    })
+
 });
 
