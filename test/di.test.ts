@@ -188,8 +188,8 @@ describe("Dependency injection", () => {
         const registry = DI.RootContainer.Registry;
 
         expect(registry).to.be.an("Map").that.have.length(1);
-        expect(registry.get(InjectableTest)).to.be.an("array").that.have.length(1);
-        expect(registry.get(InjectableTest)[0]).to.be.not.null;
+        expect(registry.get(InjectableTest.name)).to.be.an("array").that.have.length(1);
+        expect(registry.get(InjectableTest.name)[0]).to.be.not.null;
         expect(DI.resolve(InjectableTest)).to.be.not.null;
     })
 
@@ -210,9 +210,9 @@ describe("Dependency injection", () => {
         const registry = DI.RootContainer.Registry;
 
         expect(registry).to.be.an("Map").that.have.length(1);
-        expect(registry.get(InjectableBase)).to.be.an("array").that.have.length(1);
-        expect(registry.get(InjectableBase)[0]).to.be.not.null;
-        expect(registry.get(InjectableBase)[0].name).to.eq("InjectableTest");
+        expect(registry.get(InjectableBase.name)).to.be.an("array").that.have.length(1);
+        expect(registry.get(InjectableBase.name)[0]).to.be.not.null;
+        expect(registry.get(InjectableBase.name)[0].name).to.eq("InjectableTest");
         expect(DI.resolve(InjectableBase)).to.be.instanceOf(InjectableTest)
 
     })
@@ -240,9 +240,9 @@ describe("Dependency injection", () => {
         const registry = DI.RootContainer.Registry;
 
         expect(registry).to.be.an("Map").that.have.length(1);
-        expect(registry.get(InjectableBase)).to.be.an("array").that.have.length(2);
-        expect(registry.get(InjectableBase)[0]).to.be.not.null;
-        expect(registry.get(InjectableBase)[0].name).to.eq("InjectableTest");
+        expect(registry.get(InjectableBase.name)).to.be.an("array").that.have.length(2);
+        expect(registry.get(InjectableBase.name)[0]).to.be.not.null;
+        expect(registry.get(InjectableBase.name)[0].name).to.eq("InjectableTest");
 
         const services = DI.resolve(Array.ofType(InjectableBase));
         expect(services).to.be.an("array").that.have.length(2);
@@ -442,6 +442,26 @@ describe("Dependency injection", () => {
                         res();
                     }, 200);
                 })
+            }
+        }
+
+        const instance = await DI.resolve(Test);
+
+        expect(instance instanceof Test).to.be.true;
+        expect(DI.get("Test")).to.be.not.null;
+        expect(instance.Initialized).to.be.true;
+    })
+
+    it("Should resolve sync", async () => {
+
+        DI.clear();
+
+        class Test extends ResolveStrategy {
+
+            public Initialized = false;
+
+            public async resolve() {
+                this.Initialized = true;
             }
         }
 

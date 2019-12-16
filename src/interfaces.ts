@@ -20,7 +20,7 @@ export interface IBind {
 
 export interface IContainer {
     Cache: Map<string, any[] | any>;
-    Registry: Map<Class<any> | string, any[] | any>;
+    Registry: Map<string, any[] | any>;
 
     clear(): void;
     register<T>(implementation: Class<T> | Factory<T>): IBind;

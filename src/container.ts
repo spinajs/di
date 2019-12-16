@@ -17,7 +17,7 @@ export class Container implements IContainer {
    * eg. that class IConfiguration should be resolved as DatabaseConfiguration etc.
    * @access private
    */
-  private registry: Map<Class<any> | string, Array<Class<any>>>;
+  private registry: Map<string, Array<Class<any>>>;
 
   /**
    * Singletons cache, objects that should be created only once are stored here.
@@ -38,12 +38,12 @@ export class Container implements IContainer {
   }
 
 
-  public get Registry(): Map<Class<any> | string, Array<Class<any>>> {
+  public get Registry(): Map<string, Array<Class<any>>> {
     return this.registry;
   }
 
   constructor(parent?: IContainer) {
-    this.registry = new Map<Class<any>, any[]>();
+    this.registry = new Map<string, any[]>();
     this.cache = new Map<string, any[]>();
     this.parent = parent || undefined;
 
@@ -75,14 +75,15 @@ export class Container implements IContainer {
 
     return {
       as(type: Class<T> | string) {
-        if (self.registry.has(type)) {
-          self.registry.get(type).push(implementation);
+        const tname = (typeof type === "string") ? type : type.name;
+        if (self.registry.has(tname)) {
+          self.registry.get(tname).push(implementation);
         } else {
-          self.registry.set(type, [implementation]);
+          self.registry.set(tname, [implementation]);
         }
       },
       asSelf() {
-        self.registry.set(implementation, [implementation]);
+        self.registry.set(implementation.name, [implementation]);
         return this;
       }
     };
@@ -107,7 +108,7 @@ export class Container implements IContainer {
   public get<T>(service: string | Class<T> | TypedArray<T>, parent = true): T | T[] {
 
     const self = this;
-    const identifier = (typeof service === 'string') ? service : (service instanceof TypedArray) ? this.Registry.get(service.Type) : this.Registry.get(service);
+    const identifier = (typeof service === 'string') ? service : (service instanceof TypedArray) ? this.Registry.get(service.Type.name) : this.Registry.get(service.name);
 
     if (typeof identifier === 'string') {
       return _get(identifier);
@@ -132,7 +133,7 @@ export class Container implements IContainer {
 
   public check<T>(service: Class<T> | string, parent = true): boolean {
 
-    if (this.registry.has(service)) {
+    if (this.registry.has((typeof service === "string") ? service : service.name)) {
       return true;
     } else if (this.parent && parent) {
       return this.parent.check(service);
@@ -184,8 +185,8 @@ export class Container implements IContainer {
    * @param type what to resolve, can be class definition or factory function
    * @param options options passed to constructor / factory
    */
-  public resolve<T>(type: Class<T> | Factory<T>, options?: any[], check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
-  public resolve<T>(type: Class<T> | Factory<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
+  public resolve<T>(type: Class<T>, options?: any[], check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
+  public resolve<T>(type: Class<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
 
   /**
    * 
@@ -205,23 +206,23 @@ export class Container implements IContainer {
    * @param options options passed to constructor / factory
    * @param check strict check if serivice is registered in container before resolving. Default behavior is to not check and resolve
    */
-  public resolve<T>(type: Class<T> | Factory<T> | TypedArray<T> | string, options?: any[] | boolean, check?: boolean): Promise<T | T[]> | T | T[] {
+  public resolve<T>(type: Class<T> | TypedArray<T> | string, options?: any[] | boolean, check?: boolean): Promise<T | T[]> | T | T[] {
 
     if (_.isNil(type)) {
       throw new ArgumentException('argument `type` cannot be null or undefined');
     }
 
     const opt = (typeof options === "boolean") ? null : options;
-    const targetType = (type instanceof TypedArray) ? this.registry.get(type.Type) || [type.Type] : this.registry.get(type) || ((typeof type === 'string') ? null : [type]);
+    const targetType = (type instanceof TypedArray) ? this.registry.get(type.Type.name) || [type.Type] : ((typeof type === 'string') ? this.registry.get(type) : this.registry.get(type.name) || [type]);
     const sourceType = (type instanceof TypedArray) ? type.Type : type;
 
     if (typeof options === "boolean" && options === true || check === true) {
-      if (!this.Registry.has(sourceType)) {
+      if (!this.Registry.has((typeof sourceType === 'string') ? sourceType : sourceType.name)) {
         throw new Error(`Type ${sourceType} is not registered at container`);
       }
     }
 
-    if(typeof sourceType === 'string'){
+    if (typeof sourceType === 'string') {
       return this.resolveType(sourceType, targetType[0], sourceType, opt);
     }
 
@@ -273,17 +274,19 @@ export class Container implements IContainer {
       return r;
     }
 
-    function _resolve(d: IInjectDescriptor, t: Class<T> | Factory<T>, i: IResolvedInjection[]) {
+    function _resolve(d: IInjectDescriptor, t: Class<T>, i: IResolvedInjection[]) {
+
+      const tname = (typeof sourceType === "string") ? sourceType : sourceType.name;
 
       if (d.resolver === ResolveType.NewInstance) {
         return _getNewInstance(t, i);
       }
 
-      if (!self.Registry.has(sourceType)) {
-        self.Registry.set(sourceType, [t]);
+      if (!self.Registry.has(tname)) {
+        self.Registry.set(tname, [t]);
       } else {
-        if (!self.Registry.get(sourceType).find(tt => tt.name === t.name)) {
-          self.Registry.set(sourceType, self.Registry.get(sourceType).concat(t));
+        if (!self.Registry.get(tname).find(tt => tt.name === t.name)) {
+          self.Registry.set(tname, self.Registry.get(tname).concat(t));
         }
       }
 

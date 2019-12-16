@@ -35,11 +35,11 @@ export namespace DI {
      */
     export function resolve<T>(type: string, options?: any[], check?: boolean): T;
     export function resolve<T>(type: string, check?: boolean): T;
-    export function resolve<T>(type: Class<T> | Factory<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
+    export function resolve<T>(type: Class<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
     export function resolve<T>(type: TypedArray<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
-    export function resolve<T>(type: Class<T> | Factory<T>, options?: any[] | boolean, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
+    export function resolve<T>(type: Class<T>, options?: any[] | boolean, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
     export function resolve<T>(type: TypedArray<T>, options?: any[] | boolean, check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
-    export function resolve<T>(type: Class<T> | Factory<T> | TypedArray<T> | string, options?: any[] | boolean, check?: boolean): Promise<T | T[]> | T | T[] {
+    export function resolve<T>(type: Class<T> | TypedArray<T> | string, options?: any[] | boolean, check?: boolean): Promise<T | T[]> | T | T[] {
         return RootContainer.resolve<T>(type as any, options, check);
     }
 
