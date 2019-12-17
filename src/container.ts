@@ -216,6 +216,10 @@ export class Container implements IContainer {
     const targetType = (type instanceof TypedArray) ? this.registry.get(type.Type.name) || [type.Type] : ((typeof type === 'string') ? this.registry.get(type) : this.registry.get(type.name) || [type]);
     const sourceType = (type instanceof TypedArray) ? type.Type : type;
 
+    if(!targetType){
+      throw new Error(`cannot resolve type ${type} becouse is not registered in container`);
+    }
+
     if (typeof options === "boolean" && options === true || check === true) {
       if (!this.Registry.has((typeof sourceType === 'string') ? sourceType : sourceType.name)) {
         throw new Error(`Type ${sourceType} is not registered at container`);
