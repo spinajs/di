@@ -665,9 +665,9 @@ describe("Dependency injection", () => {
 
     })
 
-    it("Should register class with as string name", ()=>{
+    it("Should register class with as string name", () => {
 
-        class FuPIS{}
+        class FuPIS { }
 
         DI.register(FuPIS).as("FuPIS");
 
@@ -675,6 +675,43 @@ describe("Dependency injection", () => {
 
         const instance = DI.resolve("FuPIS");
         expect(instance).to.be.not.null;
+
+    })
+
+    it("should resolve on multiple inheritance with mixed decorators", () => {
+
+        debugger;
+        class Foo { };
+
+        class Bar { };
+
+        class A {
+
+            @Autoinject(Foo)
+            // @ts-ignore
+            public Foo: Foo;
+        }
+
+        class B extends A {
+
+        }
+
+        @Inject(Bar)
+        // @ts-ignore
+        class C extends B {
+            constructor(public Bar: Bar) {
+                super();
+            }
+        }
+
+
+        const entity = DI.resolve(C);
+
+        expect(entity.Foo).to.be.not.null;
+        expect(entity.Bar).to.be.not.null;
+
+        expect(entity.Foo).to.be.not.undefined;
+        expect(entity.Bar).to.be.not.undefined;
 
     })
 

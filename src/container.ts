@@ -216,7 +216,7 @@ export class Container implements IContainer {
     const targetType = (type instanceof TypedArray) ? this.registry.get(type.Type.name) || [type.Type] : ((typeof type === 'string') ? this.registry.get(type) : this.registry.get(type.name) || [type]);
     const sourceType = (type instanceof TypedArray) ? type.Type : type;
 
-    if(!targetType){
+    if (!targetType) {
       throw new Error(`cannot resolve type ${type} becouse is not registered in container`);
     }
 
@@ -298,7 +298,29 @@ export class Container implements IContainer {
     }
 
     function _extractDescriptor<T>(type: Abstract<T> | Constructor<T> | Factory<T>) {
-      return (((type as any)[DI_DESCRIPTION_SYMBOL] || (type.prototype && (((type as any).prototype)[DI_DESCRIPTION_SYMBOL])) || { inject: [], resolver: ResolveType.Singleton })) as IInjectDescriptor;
+
+      const descriptor: IInjectDescriptor = {
+        inject: [],
+        resolver: ResolveType.Singleton
+      };
+
+      reduce(type);
+
+      return descriptor;
+
+      function reduce(t: any) {
+        if (!t) {
+          return;
+        }
+
+        if (t[DI_DESCRIPTION_SYMBOL]) {
+          descriptor.inject = descriptor.inject.concat(t[DI_DESCRIPTION_SYMBOL].inject);
+          descriptor.resolver = t[DI_DESCRIPTION_SYMBOL].resolver;
+        }
+
+        reduce(t.prototype);
+        reduce(t.__proto__);
+      }
     }
 
     function _resolveDeps(toInject: IToInject[]) {
