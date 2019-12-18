@@ -245,6 +245,14 @@ export class Container implements IContainer {
   private resolveType<T>(sourceType: Class<T> | string, targetType: Class<T> | Factory<T>, cacheKey: string, options?: any[]): Promise<T> | T {
     const self = this;
     const descriptor = _extractDescriptor<T>(targetType);
+
+    // check cache if needed
+    if (descriptor.resolver === ResolveType.Singleton || descriptor.resolver === ResolveType.PerChildContainer) {
+      if (this.has(targetType, descriptor.resolver === ResolveType.Singleton)) {
+        return this.get(targetType);
+      }
+    }
+
     const deps = _resolveDeps(descriptor.inject);
 
 
@@ -306,7 +314,7 @@ export class Container implements IContainer {
 
       reduce(type);
 
-       
+
       descriptor.inject = _.uniqWith(descriptor.inject, (a, b) => {
         return a.inject.name === b.inject.name;
       });

@@ -680,7 +680,6 @@ describe("Dependency injection", () => {
 
     it("should resolve on multiple inheritance with mixed decorators", () => {
 
-        debugger;
         class Foo { };
 
         class Bar { };
