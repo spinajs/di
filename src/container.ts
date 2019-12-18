@@ -306,6 +306,11 @@ export class Container implements IContainer {
 
       reduce(type);
 
+       
+      descriptor.inject = _.uniqWith(descriptor.inject, (a, b) => {
+        return a.inject.name === b.inject.name;
+      });
+
       return descriptor;
 
       function reduce(t: any) {
