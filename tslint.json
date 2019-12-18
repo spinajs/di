@@ -20,6 +20,9 @@
     },
     "no-shadowed-variable": {
       "severity": "off"
+    },
+    "ordered-imports": {
+      "severity": "off"
     }
   }
 }
