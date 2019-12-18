@@ -255,8 +255,6 @@ export class Container implements IContainer {
 
     const deps = _resolveDeps(descriptor.inject);
 
-
-
     if (deps instanceof Promise) {
       return deps.then(resolvedDependencies => {
         return _resolve(descriptor, targetType, resolvedDependencies);
