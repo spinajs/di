@@ -108,7 +108,7 @@ export class Container implements IContainer {
   public get<T>(service: string | Class<T> | TypedArray<T>, parent = true): T | T[] {
 
     const self = this;
-    const identifier = (typeof service === 'string') ? service : (service instanceof TypedArray) ? this.Registry.get(service.Type.name) : this.Registry.get(service.name);
+    const identifier = (typeof service === 'string') ? service : (service instanceof TypedArray) ? this.Registry.get(service.Type.name) : this.Registry.get(service.name) || service.name;
 
     if (typeof identifier === 'string') {
       return _get(identifier);
@@ -131,12 +131,31 @@ export class Container implements IContainer {
     }
   }
 
-  public check<T>(service: Class<T> | string, parent = true): boolean {
+  public getRegistered<T>(service: string | Class<T>, parent = true): Array<Class<any>> {
+
+    if (!service) {
+      throw new ArgumentException('argument "service" cannot be null or empty');
+    }
+
+    const name = (typeof service === "string") ? service : service.constructor.name;
+
+    if(this.registry.has(name)){
+      return this.registry.get(name);
+    }
+
+    if(this.parent && parent){
+      return this.parent.getRegistered(service, parent);
+    }
+
+    return null;
+  }
+
+  public hasRegistered<T>(service: Class<T> | string, parent = true): boolean {
 
     if (this.registry.has((typeof service === "string") ? service : service.name)) {
       return true;
     } else if (this.parent && parent) {
-      return this.parent.check(service);
+      return this.parent.hasRegistered(service);
     }
 
     return false;
@@ -155,7 +174,7 @@ export class Container implements IContainer {
       throw new ArgumentException('argument cannot be null or empty');
     }
 
-    const name = _.isString(service) ? service : service.constructor.name;
+    const name = (typeof service === "string") ? service : service.name;
 
     if (this.cache.has(name)) {
       return true;
@@ -167,6 +186,7 @@ export class Container implements IContainer {
 
     return false;
   }
+
 
   /**
    * 
@@ -208,30 +228,33 @@ export class Container implements IContainer {
    */
   public resolve<T>(type: Class<T> | TypedArray<T> | string, options?: any[] | boolean, check?: boolean): Promise<T | T[]> | T | T[] {
 
+    const sourceType = (type instanceof TypedArray) ? type.Type : type;
+
     if (_.isNil(type)) {
       throw new ArgumentException('argument `type` cannot be null or undefined');
     }
 
+
+    if (typeof options === "boolean" && options === true || check === true) {
+      if (!this.hasRegistered((typeof sourceType === 'string') ? sourceType : sourceType.name)) {
+        throw new Error(`Type ${sourceType} is not registered at container`);
+      }
+    }
+
+
     const opt = (typeof options === "boolean") ? null : options;
-    const targetType = (type instanceof TypedArray) ? this.registry.get(type.Type.name) || [type.Type] : ((typeof type === 'string') ? this.registry.get(type) : this.registry.get(type.name) || [type]);
-    const sourceType = (type instanceof TypedArray) ? type.Type : type;
+    const targetType = (type instanceof TypedArray) ? this.getRegistered(type.Type.name) || [type.Type] : ((typeof type === 'string') ? this.getRegistered(type) : this.getRegistered(type.name) || [type]);
 
     if (!targetType) {
       throw new Error(`cannot resolve type ${type} becouse is not registered in container`);
     }
 
-    if (typeof options === "boolean" && options === true || check === true) {
-      if (!this.Registry.has((typeof sourceType === 'string') ? sourceType : sourceType.name)) {
-        throw new Error(`Type ${sourceType} is not registered at container`);
-      }
-    }
-
     if (typeof sourceType === 'string') {
-      return this.resolveType(sourceType, targetType[0], sourceType, opt);
+      return this.resolveType(sourceType, targetType[0], opt);
     }
 
     if (type instanceof TypedArray) {
-      const resolved = targetType.map(r => this.resolveType(sourceType, r, r.name, opt));
+      const resolved = targetType.map(r => this.resolveType(sourceType, r, opt));
       if (resolved.some(r => r instanceof Promise)) {
         return Promise.all(resolved) as Promise<T[]>;
       }
@@ -239,10 +262,10 @@ export class Container implements IContainer {
       return resolved as T[];
     }
 
-    return this.resolveType(sourceType, targetType[0], sourceType.name, opt);
+    return this.resolveType(sourceType, targetType[0], opt);
   }
 
-  private resolveType<T>(sourceType: Class<T> | string, targetType: Class<T> | Factory<T>, cacheKey: string, options?: any[]): Promise<T> | T {
+  private resolveType<T>(sourceType: Class<T> | string, targetType: Class<T> | Factory<T>, options?: any[]): Promise<T> | T {
     const self = this;
     const descriptor = _extractDescriptor<T>(targetType);
 
@@ -274,11 +297,11 @@ export class Container implements IContainer {
     function _setCache(r: any) {
       if (descriptor.resolver === ResolveType.Singleton) {
         if (!self.has(targetType, true)) {
-          self.Cache.set(cacheKey, r);
+          self.Cache.set(targetType.name, r);
         }
       } else if (descriptor.resolver === ResolveType.PerChildContainer) {
         if (!self.has(targetType, false)) {
-          self.Cache.set(cacheKey, r);
+          self.Cache.set(targetType.name, r);
         }
       }
       return r;
@@ -300,7 +323,7 @@ export class Container implements IContainer {
         }
       }
 
-      return _getCachedInstance(cacheKey, d.resolver === ResolveType.Singleton ? true : false) || _getNewInstance(t, i);
+      return _getCachedInstance(targetType, d.resolver === ResolveType.Singleton ? true : false) || _getNewInstance(t, i);
     }
 
     function _extractDescriptor<T>(type: Abstract<T> | Constructor<T> | Factory<T>) {

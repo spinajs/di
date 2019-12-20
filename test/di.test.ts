@@ -581,11 +581,11 @@ describe("Dependency injection", () => {
         {
             const child = DI.child();
 
-            expect(child.check(FooBar, true)).to.eq(true);
-            expect(child.check(FooBar, false)).to.eq(false);
+            expect(child.hasRegistered(FooBar, true)).to.eq(true);
+            expect(child.hasRegistered(FooBar, false)).to.eq(false);
 
-            expect(child.check(ZarFar, true)).to.eq(false);
-            expect(child.check(ZarFar, false)).to.eq(false);
+            expect(child.hasRegistered(ZarFar, true)).to.eq(false);
+            expect(child.hasRegistered(ZarFar, false)).to.eq(false);
 
         }
 
@@ -713,6 +713,49 @@ describe("Dependency injection", () => {
         expect(entity.Bar).to.be.not.undefined;
 
     })
+
+    it("Resolve with check in registry should look in parent containers", () => {
+
+        class Foo {
+            public Count = 1;
+        };
+
+        class Bar extends Foo {
+
+
+            constructor() {
+                super();
+
+                this.Count++;
+            }
+        }
+
+        DI.register(Bar).as(Foo);
+        const child = DI.child();
+
+        const instance = child.resolve(Foo, true);
+        expect(instance).instanceOf(Bar);
+    })
+
+    it("Resolve should check for resolved services in parent containers", () => {
+        class Foo {
+        };
+
+        class Bar extends Foo {
+            constructor() {
+                super();
+
+            }
+        }
+
+        DI.register(Bar).as(Foo);
+        const parentInstance = DI.resolve(Foo);
+        const child = DI.child();
+
+        const instance = child.resolve(Foo);
+        expect(instance).instanceOf(Bar);
+        expect(instance).to.eq(parentInstance);
+    });
 
 });
 

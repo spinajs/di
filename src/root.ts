@@ -72,7 +72,7 @@ export namespace DI {
      * @param service service class object to check
      */
     export function check<T>(service: Class<T> | string): boolean {
-        return RootContainer.check(service);
+        return RootContainer.hasRegistered(service);
     }
     /**
      * Creates child DI container.

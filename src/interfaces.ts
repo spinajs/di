@@ -28,10 +28,11 @@ export interface IContainer {
     get<T>(service: TypedArray<T>, parent?: boolean): T[];
     get<T>(service: string | Class<T>, parent?: boolean): T;
     get<T>(service: string | Class<T> | TypedArray<T>, parent?: boolean): T | T[];
+    getRegistered<T>(service: string | Class<T>, parent : boolean): Array<Class<any>>;
 
 
     has<T>(service: string | Class<T>, parent?: boolean): boolean;
-    check<T>(service: Class<T> | string, parent?: boolean): boolean;
+    hasRegistered<T>(service: Class<T> | string, parent?: boolean): boolean;
 
     resolve<T>(type: string, options?: any[], check?: boolean): T;
     resolve<T>(type: string, check?: boolean): T;
