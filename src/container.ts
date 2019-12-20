@@ -76,10 +76,12 @@ export class Container implements IContainer {
     return {
       as(type: Class<T> | string) {
         const tname = (typeof type === "string") ? type : type.name;
-        if (self.registry.has(tname)) {
-          self.registry.get(tname).push(implementation);
-        } else {
-          self.registry.set(tname, [implementation]);
+        if (!self._hasRegisteredType(tname, implementation)) {
+          if (self.registry.has(tname)) {
+            self.registry.get(tname).push(implementation);
+          } else {
+            self.registry.set(tname, [implementation]);
+          }
         }
       },
       asSelf() {
@@ -108,7 +110,11 @@ export class Container implements IContainer {
   public get<T>(service: string | Class<T> | TypedArray<T>, parent = true): T | T[] {
 
     const self = this;
-    const identifier = (typeof service === 'string') ? service : (service instanceof TypedArray) ? this.Registry.get(service.Type.name) : this.Registry.get(service.name) || service.name;
+    const identifier = (typeof service === 'string') ? this.Registry.get(service) || service : (service instanceof TypedArray) ? this.Registry.get(service.Type.name) : this.Registry.get(service.name) || service.name;
+
+    if (!identifier) {
+      return null;
+    }
 
     if (typeof identifier === 'string') {
       return _get(identifier);
@@ -118,7 +124,8 @@ export class Container implements IContainer {
       return (identifier as Array<Class<T>>).map(t => _get(t.name));
     }
 
-    return _get(identifier[0].name);
+
+    return _get((identifier[0] as any).name);
 
     function _get(i: string) {
       if (self.cache.has(i)) {
@@ -139,11 +146,11 @@ export class Container implements IContainer {
 
     const name = (typeof service === "string") ? service : service.constructor.name;
 
-    if(this.registry.has(name)){
+    if (this.registry.has(name)) {
       return this.registry.get(name);
     }
 
-    if(this.parent && parent){
+    if (this.parent && parent) {
       return this.parent.getRegistered(service, parent);
     }
 
@@ -318,7 +325,7 @@ export class Container implements IContainer {
       if (!self.Registry.has(tname)) {
         self.Registry.set(tname, [t]);
       } else {
-        if (!self.Registry.get(tname).find(tt => tt.name === t.name)) {
+        if (!self._hasRegisteredType(sourceType, t)) {
           self.Registry.set(tname, self.Registry.get(tname).concat(t));
         }
       }
@@ -436,6 +443,15 @@ export class Container implements IContainer {
     }
   }
 
+  private _hasRegisteredType<T>(source: Class<T> | string, type: Class<T> | string) {
+    const sourceName = (typeof source === "string") ? source : source.name;
+    const targetName = (typeof type === "string") ? type : type.name;
+    if (this.registry.has(sourceName)) {
+      return this.registry.get(sourceName).find(s => s.name === targetName) !== undefined;
+    }
+
+    return false;
+  }
 
 
   //  
