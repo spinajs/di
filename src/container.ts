@@ -250,7 +250,8 @@ export class Container implements IContainer {
 
 
     const opt = (typeof options === "boolean") ? null : options;
-    const targetType = (type instanceof TypedArray) ? this.getRegistered(type.Type.name) || [type.Type] : ((typeof type === 'string') ? this.getRegistered(type) : this.getRegistered(type.name) || [type]);
+    const isArray = type.constructor.name  === 'TypedArray';
+    const targetType : any[] = (isArray) ? this.getRegistered<T>((type as TypedArray<T>).Type.name) || [(type as TypedArray<T>).Type] : ((typeof type === 'string') ? this.getRegistered(type) : this.getRegistered((type as any).name) || [type]);
 
     if (!targetType) {
       throw new Error(`cannot resolve type ${type} becouse is not registered in container`);
@@ -260,7 +261,7 @@ export class Container implements IContainer {
       return this.resolveType(sourceType, targetType[0], opt);
     }
 
-    if (type instanceof TypedArray) {
+    if (isArray) {
       const resolved = targetType.map(r => this.resolveType(sourceType, r, opt));
       if (resolved.some(r => r instanceof Promise)) {
         return Promise.all(resolved) as Promise<T[]>;
