@@ -1,4 +1,4 @@
-import { ArgumentException } from '@spinajs/exceptions'
+import { InvalidArgument } from '@spinajs/exceptions'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
@@ -494,7 +494,7 @@ describe("Dependency injection", () => {
     })
 
     it("Should throw if type is unknown", () => {
-        return expect(() => DI.resolve(undefined)).to.throw(ArgumentException, "argument `type` cannot be null or undefined");
+        return expect(() => DI.resolve(undefined)).to.throw(InvalidArgument, "argument `type` cannot be null or undefined");
     })
 
     it("Should resolve from factory func", () => {

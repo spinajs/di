@@ -19,7 +19,7 @@ export namespace DI {
     /**
      * Register class/interface to DI root container.
      * @param type - interface object to register
-     * @throws { ArgumentException } if type is null or undefined
+     * @throws { InvalidArgument } if type is null or undefined
      */
     export function register<T>(type: Class<T> | Factory<T>): IBind {
         return RootContainer.register(type);
@@ -31,7 +31,7 @@ export namespace DI {
      * @param type - class to resolve
      * @param options - optional parameters passed to class constructor
      * @return - class instance
-     * @throws { ArgumentException } if type is null or undefined
+     * @throws { InvalidArgument } if type is null or undefined
      */
     export function resolve<T>(type: string, options?: any[], check?: boolean): T;
     export function resolve<T>(type: string, check?: boolean): T;

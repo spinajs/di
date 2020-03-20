@@ -1,4 +1,4 @@
-import { ArgumentException } from "@spinajs/exceptions";
+import { InvalidArgument } from "@spinajs/exceptions";
 import * as _ from 'lodash';
 import 'reflect-metadata';
 import { TypedArray } from './array';
@@ -64,11 +64,11 @@ export class Container implements IContainer {
   /**
    * Register class/interface to DI.
    * @param type - interface object to register
-   * @throws { ArgumentException } if type is null or undefined
+   * @throws { InvalidArgument } if type is null or undefined
    */
   public register<T>(implementation: Class<T> | Factory<T>): IBind {
     if (_.isNil(implementation)) {
-      throw new ArgumentException('argument `type` cannot be null or undefined');
+      throw new InvalidArgument('argument `type` cannot be null or undefined');
     }
 
     const self = this;
@@ -141,7 +141,7 @@ export class Container implements IContainer {
   public getRegistered<T>(service: string | Class<T>, parent = true): Array<Class<any>> {
 
     if (!service) {
-      throw new ArgumentException('argument "service" cannot be null or empty');
+      throw new InvalidArgument('argument "service" cannot be null or empty');
     }
 
     const name = (typeof service === "string") ? service : service.constructor.name;
@@ -174,11 +174,11 @@ export class Container implements IContainer {
    *
    * @param service - service name or class to check
    * @returns { boolean } - true if service instance already exists, otherwise false.
-   * @throws { ArgumentException } when service is null or empty
+   * @throws { InvalidArgument } when service is null or empty
    */
   public has<T>(service: string | Class<T>, parent = true): boolean {
     if (!service) {
-      throw new ArgumentException('argument cannot be null or empty');
+      throw new InvalidArgument('argument cannot be null or empty');
     }
 
     const name = (typeof service === "string") ? service : service.name;
@@ -238,7 +238,7 @@ export class Container implements IContainer {
     const sourceType = (type instanceof TypedArray) ? type.Type : type;
 
     if (_.isNil(type)) {
-      throw new ArgumentException('argument `type` cannot be null or undefined');
+      throw new InvalidArgument('argument `type` cannot be null or undefined');
     }
 
 
