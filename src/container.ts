@@ -5,7 +5,7 @@ import { TypedArray } from './array';
 import { DI_DESCRIPTION_SYMBOL } from "./decorators";
 import { ResolveType } from "./enums";
 import { isConstructor } from './helpers';
-import { IBind, IContainer, IInjectDescriptor, IResolvedInjection, ResolveStrategy, IToInject, AsyncResolveStrategy } from './interfaces';
+import { IBind, IContainer, IInjectDescriptor, IResolvedInjection, SyncModule, IToInject, AsyncModule } from './interfaces';
 import { Class, Factory } from './types';
 
 /**
@@ -212,8 +212,8 @@ export class Container implements IContainer {
    * @param type what to resolve, can be class definition or factory function
    * @param options options passed to constructor / factory
    */
-  public resolve<T>(type: Class<T>, options?: any[], check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
-  public resolve<T>(type: Class<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
+  public resolve<T>(type: Class<T>, options?: any[], check?: boolean): T extends AsyncModule ? Promise<T> : T;
+  public resolve<T>(type: Class<T>, check?: boolean): T extends AsyncModule ? Promise<T> : T;
 
   /**
    * 
@@ -224,8 +224,8 @@ export class Container implements IContainer {
    * @param check - strict check if serivice is registered in container before resolving. Default behavior is to not check and resolve
    * 
    */
-  public resolve<T>(type: TypedArray<T>, options?: any[], check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
-  public resolve<T>(type: TypedArray<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
+  public resolve<T>(type: TypedArray<T>, options?: any[], check?: boolean): T extends AsyncModule ? Promise<T[]> : T[];
+  public resolve<T>(type: TypedArray<T>, check?: boolean): T extends AsyncModule ? Promise<T[]> : T[];
 
   /**
    * 
@@ -427,7 +427,7 @@ export class Container implements IContainer {
           newInstance[ai.autoinjectKey] = ai.instance;
         }
 
-        if (newInstance instanceof AsyncResolveStrategy) {
+        if (newInstance instanceof AsyncModule) {
           return new Promise((res) => {
             newInstance.resolveAsync(self).then(() => {
               res(newInstance);
@@ -435,7 +435,7 @@ export class Container implements IContainer {
           });
         }
 
-        if (newInstance instanceof ResolveStrategy) {
+        if (newInstance instanceof SyncModule) {
           newInstance.resolve(self);
         }
       }

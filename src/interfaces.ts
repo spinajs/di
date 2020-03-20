@@ -36,10 +36,10 @@ export interface IContainer {
 
     resolve<T>(type: string, options?: any[], check?: boolean): T;
     resolve<T>(type: string, check?: boolean): T;
-    resolve<T>(type: Class<T> | Factory<T>, options?: any[] | boolean, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
-    resolve<T>(type: TypedArray<T>, options?: any[] | boolean, check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
-    resolve<T>(type: Class<T> | Factory<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T> : T;
-    resolve<T>(type: TypedArray<T>, check?: boolean): T extends AsyncResolveStrategy ? Promise<T[]> : T[];
+    resolve<T>(type: Class<T> | Factory<T>, options?: any[] | boolean, check?: boolean): T extends AsyncModule ? Promise<T> : T;
+    resolve<T>(type: TypedArray<T>, options?: any[] | boolean, check?: boolean): T extends AsyncModule ? Promise<T[]> : T[];
+    resolve<T>(type: Class<T> | Factory<T>, check?: boolean): T extends AsyncModule ? Promise<T> : T;
+    resolve<T>(type: TypedArray<T>, check?: boolean): T extends AsyncModule ? Promise<T[]> : T[];
 }
 
 /**
@@ -69,7 +69,7 @@ export interface IResolvedInjection {
  * specific way but without need for factory function.
  *
  *
- * @see FrameworkModuleResolveStrategy implementation
+ * @see FrameworkModuleSyncModule implementation
  */
 // export interface IStrategy {
 //     resolve: (target: any, container: IContainer) => void;
@@ -79,10 +79,10 @@ export interface IResolvedInjection {
 //     resolveA: (target: any, container: IContainer) => Promise<void>;
 // }
 
-export abstract class ResolveStrategy {
+export abstract class SyncModule {
     public abstract resolve(container: IContainer): void;
 }
 
-export abstract class AsyncResolveStrategy {
+export abstract class AsyncModule {
     public abstract resolveAsync(container: IContainer): Promise<void>;
 }

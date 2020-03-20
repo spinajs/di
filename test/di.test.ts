@@ -2,7 +2,7 @@ import { InvalidArgument } from '@spinajs/exceptions'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
-import { AsyncResolveStrategy, Autoinject, Container, DI, Inject, Injectable, LazyInject, NewInstance, PerChildInstance, ResolveStrategy, Singleton } from '../src';
+import { AsyncModule, Autoinject, Container, DI, Inject, Injectable, LazyInject, NewInstance, PerChildInstance, SyncModule, Singleton } from '../src';
 
 const expect = chai.expect;
 chai.use(chaiAsPromised);
@@ -121,7 +121,7 @@ class SampleImplementation2 extends SampleBaseClass {
 
 @Singleton()
 // @ts-ignore
-class TestModule extends ResolveStrategy {
+class TestModule extends SyncModule {
     public Initialized = false;
 
     // tslint:disable-next-line: no-empty
@@ -431,7 +431,7 @@ describe("Dependency injection", () => {
 
         DI.clear();
 
-        class Test extends AsyncResolveStrategy {
+        class Test extends AsyncModule {
 
             public Initialized = false;
 
@@ -456,7 +456,7 @@ describe("Dependency injection", () => {
 
         DI.clear();
 
-        class Test extends ResolveStrategy {
+        class Test extends SyncModule {
 
             public Initialized = false;
 
