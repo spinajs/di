@@ -5,11 +5,11 @@
  * @param value - value to test
  */
 export function isConstructor(value: any) {
-    try {
-        Reflect.construct(String, [], value);
-    } catch (e) {
-        return false;
-    }
+  try {
+    Reflect.construct(String, [], value);
+  } catch (e) {
+    return false;
+  }
 
-    return true;
+  return true;
 }
