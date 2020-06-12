@@ -270,7 +270,7 @@ export class Container implements IContainer {
     }
 
     if (typeof sourceType === 'string') {
-      return this.resolveType(sourceType, targetType[0], opt);
+      return this.resolveType(sourceType, targetType[targetType.length - 1], opt);
     }
 
     if (isArray) {
@@ -282,7 +282,7 @@ export class Container implements IContainer {
       return resolved as T[];
     }
 
-    return this.resolveType(sourceType, targetType[0], opt);
+    return this.resolveType(sourceType, targetType[targetType.length - 1], opt);
   }
 
   private resolveType<T>(
