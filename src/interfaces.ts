@@ -6,16 +6,26 @@ import { Class, Factory } from './types';
  */
 export interface IBind {
   /**
+   * Private var for holding implementation type
+   */
+  _impl : any,
+
+  /**
    * `as` binding (alias)
    *
    * @param type - base class that is being registered
    */
-  as<T>(type: Class<T> | string): void;
+  as<T>(type: Class<T> | string): this;
 
   /**
    * self bind, class should be resolved by its name. Its default behaviour.
    */
-  asSelf(): void;
+  asSelf(): this;
+
+  /**
+   * Registers object as single instance ( singleton )
+   */
+  singleInstance(): this;
 }
 
 export interface IContainer {
