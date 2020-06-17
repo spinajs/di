@@ -37,7 +37,7 @@
   },
   "homepage": "https://github.com/spinajs/di#readme",
   "dependencies": {
-    "@spinajs/exceptions": "^1.0.0",
+    "@spinajs/exceptions": "^1.0.3",
     "lodash": "^4.17.14",
     "reflect-metadata": "^0.1.13"
   },
