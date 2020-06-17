@@ -346,7 +346,7 @@ export class Container implements IContainer {
 
       const isFactory = !isConstructor(targetType) && _.isFunction(targetType);
       const checkParent = descriptor.resolver === ResolveType.Singleton;
-      const toCheck = isFactory ? (sourceType === 'string' ? sourceType : (sourceType as any).name) : targetType.name;
+      const toCheck = isFactory ? (typeof sourceType === 'string' ? sourceType : (sourceType as any).name) : targetType.name;
 
       if (!self.has(toCheck, checkParent)) {
         self.Cache.set(toCheck, r);

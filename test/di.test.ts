@@ -776,5 +776,15 @@ describe("Dependency injection", () => {
         expect(instance).to.eq(parentInstance);
     });
 
+    it("Should resolve factory function as string", async () => {
+
+        DI.register(() => {
+            return { id: 1};
+        }).as("Test").singleInstance();
+
+        const instance = await DI.resolve("Test");
+        expect(instance).to.include({ id : 1});
+    })
+
 });
 
