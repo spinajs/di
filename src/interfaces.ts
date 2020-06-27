@@ -8,7 +8,7 @@ export interface IBind {
   /**
    * Private var for holding implementation type
    */
-  _impl : any,
+  _impl: any;
 
   /**
    * `as` binding (alias)

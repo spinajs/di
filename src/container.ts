@@ -16,8 +16,6 @@ import {
 } from './interfaces';
 import { Class, Factory, Constructor } from './types';
 
-
-
 /**
  * Dependency injection container implementation
  */
@@ -85,7 +83,6 @@ export class Container implements IContainer {
     return {
       _impl: null,
       as(type: Class<T> | string) {
-
         this._impl = implementation;
 
         const tname = typeof type === 'string' ? type : type.name;
@@ -114,7 +111,7 @@ export class Container implements IContainer {
         this._impl[DI_DESCRIPTION_SYMBOL] = descriptor;
 
         return this;
-      }
+      },
     };
   }
 
@@ -140,9 +137,8 @@ export class Container implements IContainer {
       typeof service === 'string'
         ? this.Registry.get(service) || service
         : service instanceof TypedArray
-          ? this.Registry.get(service.Type.name)
-          : this.Registry.get(service.name) || service.name;
-
+        ? this.Registry.get(service.Type.name)
+        : this.Registry.get(service.name) || service.name;
 
     if (!identifier) {
       return null;
@@ -158,7 +154,7 @@ export class Container implements IContainer {
 
     const isFactory = !isConstructor(identifier[0]) && _.isFunction(identifier[0]);
 
-    return _get(isFactory ? (typeof service === "string" ? service : service.name) : (identifier[0] as any).name);
+    return _get(isFactory ? (typeof service === 'string' ? service : service.name) : (identifier[0] as any).name);
 
     function _get(i: string) {
       if (self.cache.has(i)) {
@@ -285,8 +281,8 @@ export class Container implements IContainer {
     const targetType: any[] = isArray
       ? this.getRegistered<T>((type as TypedArray<T>).Type.name) || [(type as TypedArray<T>).Type]
       : typeof type === 'string'
-        ? this.getRegistered(type)
-        : this.getRegistered((type as any).name) || [type];
+      ? this.getRegistered(type)
+      : this.getRegistered((type as any).name) || [type];
 
     if (!targetType) {
       throw new Error(`cannot resolve type ${type} becouse is not registered in container`);
@@ -343,10 +339,13 @@ export class Container implements IContainer {
     }
 
     function _setCache(r: any) {
-
       const isFactory = !isConstructor(targetType) && _.isFunction(targetType);
       const checkParent = descriptor.resolver === ResolveType.Singleton;
-      const toCheck = isFactory ? (typeof sourceType === 'string' ? sourceType : (sourceType as any).name) : targetType.name;
+      const toCheck = isFactory
+        ? typeof sourceType === 'string'
+          ? sourceType
+          : (sourceType as any).name
+        : targetType.name;
 
       if (!self.has(toCheck, checkParent)) {
         self.Cache.set(toCheck, r);
