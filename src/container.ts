@@ -137,8 +137,8 @@ export class Container implements IContainer {
       typeof service === 'string'
         ? this.Registry.get(service) || service
         : service instanceof TypedArray
-        ? this.Registry.get(service.Type.name)
-        : this.Registry.get(service.name) || service.name;
+          ? this.Registry.get(service.Type.name)
+          : this.Registry.get(service.name) || service.name;
 
     if (!identifier) {
       return null;
@@ -281,8 +281,8 @@ export class Container implements IContainer {
     const targetType: any[] = isArray
       ? this.getRegistered<T>((type as TypedArray<T>).Type.name) || [(type as TypedArray<T>).Type]
       : typeof type === 'string'
-      ? this.getRegistered(type)
-      : this.getRegistered((type as any).name) || [type];
+        ? this.getRegistered(type)
+        : this.getRegistered((type as any).name) || [type];
 
     if (!targetType) {
       throw new Error(`cannot resolve type ${type} becouse is not registered in container`);

@@ -15,9 +15,9 @@ export namespace DI {
   export function clear() {
     RootContainer.clear();
   }
-
+ 
   /**
-   * Register class/interface to DI root container.
+   * Register class/interface to DI root container. If 
    * @param type - interface object to register
    * @throws { InvalidArgument } if type is null or undefined
    */

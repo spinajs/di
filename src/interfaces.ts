@@ -34,6 +34,7 @@ export interface IContainer {
 
   clear(): void;
   register<T>(implementation: Class<T> | Factory<T>): IBind;
+
   child(): IContainer;
   get<T>(service: TypedArray<T>, parent?: boolean): T[];
   get<T>(service: string | Class<T>, parent?: boolean): T;
