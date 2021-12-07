@@ -71,7 +71,6 @@ export interface IInjectDescriptor<T = any> {
 export interface IToInject<T = any> {
   inject: Class<T>;
   autoinject: boolean;
-  all: boolean;
   autoinjectKey: string;
 }
 

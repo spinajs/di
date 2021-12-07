@@ -95,7 +95,6 @@ export function Inject(...args: (Class | TypedArray<any>)[]) {
   return AddDependency((descriptor: IInjectDescriptor) => {
     for (const a of args) {
       descriptor.inject.push({
-        all: false,
         autoinject: false,
         autoinjectKey: '',
         inject: a as any,
@@ -104,38 +103,6 @@ export function Inject(...args: (Class | TypedArray<any>)[]) {
   });
 }
 
-/**
- * Sets dependency injection guidelines - what to inject for specified class. If multiple instances are registered at specified type,
- * all of them are resolved and injected
- * @param args - what to inject - class definitions
- * @example
- * ```javascript
- *
- * @InjectAll(Bar)
- * class Foo{
- *
- *  barInstances : Bar[];
- *
- *  constructor(bars : Bar[]){
- *      // all Bar implementations are injected when Foo is created via DI container
- *      this.barInstances = bar;
- *  }
- * }
- *
- * ```
- */
-export function InjectAll(...args: Class[]) {
-  return AddDependency((descriptor: IInjectDescriptor) => {
-    for (const a of args) {
-      descriptor.inject.push({
-        all: true,
-        autoinject: false,
-        autoinjectKey: '',
-        inject: a as any,
-      });
-    }
-  });
-}
 
 /**
  * Automatically injects dependency based on reflected property type. Uses experimental typescript reflection api
@@ -173,10 +140,9 @@ export function Autoinject(injectType?: Class) {
     }
 
     descriptor.inject.push({
-      all: isArray ? true : false,
       autoinject: true,
       autoinjectKey: propertyKey,
-      inject: isArray ? injectType : type,
+      inject: isArray ? Array.ofType(injectType) : type,
     });
   });
 }

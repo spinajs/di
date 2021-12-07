@@ -110,14 +110,7 @@ class SampleImplementation2 extends SampleBaseClass {
     }
 }
 
-// class SampleMultipleAutoinject {
 
-//     @Autoinject(SampleBaseClass)
-//     // @ts-ignore
-//     public Instances: SampleBaseClass[];
-
-
-// }
 
 @Singleton()
 // @ts-ignore
@@ -295,6 +288,25 @@ describe("Dependency injection", () => {
         expect(autoinjected).to.be.not.null;
         expect(autoinjected.Test).to.be.not.null;
         expect(autoinjected.Test instanceof AutoinjectBar).to.be.true;
+    })
+
+    it("Autoinject resolve multiple implementations", () => {
+
+        DI.register(SampleImplementation1).as(SampleBaseClass);
+        DI.register(SampleImplementation2).as(SampleBaseClass);
+
+
+        class SampleMultipleAutoinject {
+
+            @Autoinject(SampleBaseClass)
+            // @ts-ignore
+            public Instances: SampleBaseClass[];
+        }
+         
+        const instance = DI.resolve(SampleMultipleAutoinject);
+
+        expect(instance).to.be.not.null;
+        expect(instance.Instances).to.be.an("array").of.length(2);
     })
 
     it("Lazy inject check", () => {
