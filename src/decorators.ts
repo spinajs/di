@@ -91,7 +91,7 @@ export function Injectable(as?: Class | string) {
  *
  * ```
  */
-export function Inject(...args: Class[]) {
+export function Inject(...args: (Class | TypedArray<any>)[]) {
   return AddDependency((descriptor: IInjectDescriptor) => {
     for (const a of args) {
       descriptor.inject.push({

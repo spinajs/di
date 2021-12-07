@@ -648,6 +648,41 @@ describe("Dependency injection", () => {
         expect(getted[1]).to.be.instanceOf(InjectableTest2);
     })
 
+    it("Should @Inject should resolve all implementations", () =>{ 
+        class InjectableBase {
+
+        }
+
+        @Injectable(InjectableBase)
+        // @ts-ignore
+        class InjectableTest {
+
+        }
+
+        @Injectable(InjectableBase)
+        // @ts-ignore
+        class InjectableTest2 {
+
+        }
+
+        @Inject(Array.ofType(InjectableBase))
+        // @ts-ignore
+        class ResolvableClass
+        {
+            public Instances : InjectableBase[];
+
+            constructor(_instances : InjectableBase[])
+            {
+                this.Instances = _instances;
+            }
+        }
+
+        const instance = DI.resolve(ResolvableClass);
+
+        expect(instance).to.be.not.null;
+        expect(instance.Instances).to.be.an("array").of.length(2);
+    });
+
     it("Should throw when resolve with check", () => {
 
         class BarFart { }
