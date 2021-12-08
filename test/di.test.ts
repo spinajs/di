@@ -302,12 +302,73 @@ describe("Dependency injection", () => {
             // @ts-ignore
             public Instances: SampleBaseClass[];
         }
-         
+
         const instance = DI.resolve(SampleMultipleAutoinject);
 
         expect(instance).to.be.not.null;
         expect(instance.Instances).to.be.an("array").of.length(2);
     })
+
+    it("Should autoinject multiple as singleton", async () => {
+
+        @Singleton()
+        // @ts-ignore
+        class SampleImplementation1Single extends SampleBaseClass {
+
+            public static CallCount = 0;
+            constructor() {
+                super();
+
+                this.Name = "Sample1";
+
+                SampleImplementation1Single.CallCount++;
+            }
+        }
+
+        @Singleton()
+        // @ts-ignore
+        class SampleImplementation2Single extends SampleBaseClass {
+
+            public static CallCount = 0;
+
+            constructor() {
+                super();
+
+                this.Name = "Sample2";
+
+                SampleImplementation2Single.CallCount++;
+
+            }
+        }
+
+
+        DI.register(SampleImplementation1Single).as(SampleBaseClass);
+        DI.register(SampleImplementation2Single).as(SampleBaseClass);
+        class SampleMultipleAutoinject {
+
+            @Autoinject(SampleBaseClass)
+            // @ts-ignore
+            public Instances: SampleBaseClass[];
+        }
+
+        class SampleMultiple2Autoinject {
+
+            @Autoinject(SampleBaseClass)
+            // @ts-ignore
+            public Instances: SampleBaseClass[];
+        }
+
+        const instance = DI.resolve(SampleMultipleAutoinject);
+        const instance2 = DI.resolve(SampleMultiple2Autoinject);
+
+        expect(instance2).to.be.not.null;
+        expect(instance).to.be.not.null;
+        expect(instance.Instances).to.be.an("array").of.length(2);
+        expect(SampleImplementation1Single.CallCount).to.equal(1);
+        expect(SampleImplementation2Single.CallCount).to.equal(1);
+
+
+    });
 
     it("Lazy inject check", () => {
 
@@ -660,7 +721,7 @@ describe("Dependency injection", () => {
         expect(getted[1]).to.be.instanceOf(InjectableTest2);
     })
 
-    it("Should @Inject should resolve all implementations", () =>{ 
+    it("Should @Inject should resolve all implementations", () => {
         class InjectableBase {
 
         }
@@ -679,12 +740,10 @@ describe("Dependency injection", () => {
 
         @Inject(Array.ofType(InjectableBase))
         // @ts-ignore
-        class ResolvableClass
-        {
-            public Instances : InjectableBase[];
+        class ResolvableClass {
+            public Instances: InjectableBase[];
 
-            constructor(_instances : InjectableBase[])
-            {
+            constructor(_instances: InjectableBase[]) {
                 this.Instances = _instances;
             }
         }
@@ -826,11 +885,11 @@ describe("Dependency injection", () => {
     it("Should resolve factory function as string", async () => {
 
         DI.register(() => {
-            return { id: 1};
+            return { id: 1 };
         }).as("Test").singleInstance();
 
         const instance = await DI.resolve("Test");
-        expect(instance).to.include({ id : 1});
+        expect(instance).to.include({ id: 1 });
     })
 
 });
