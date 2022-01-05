@@ -152,9 +152,9 @@ export class Container implements IContainer {
       return (identifier as Array<Class<T>>).map(t => _get(t.name));
     }
 
-    const isFactory = !isConstructor(identifier[0]) && _.isFunction(identifier[0]);
+    const isFactory = !isConstructor(identifier[identifier.length - 1]) && _.isFunction(identifier[identifier.length - 1]);
 
-    return _get(isFactory ? (typeof service === 'string' ? service : service.name) : (identifier[0] as any).name);
+    return _get(isFactory ? (typeof service === 'string' ? service : service.name) : (identifier[identifier.length - 1] as any).name);
 
     function _get(i: string) {
       if (self.cache.has(i)) {
