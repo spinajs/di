@@ -8,6 +8,7 @@
     "coverage": "nyc npm run test",
     "build-docs": "rimraf docs && typedoc --options typedoc.json src/",
     "build": "tsc",
+    "build-watch": "tsc -w",
     "prepare": "npm run build",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
