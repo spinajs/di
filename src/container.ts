@@ -5,21 +5,14 @@ import { TypedArray } from './array';
 import { DI_DESCRIPTION_SYMBOL } from './decorators';
 import { ResolveType } from './enums';
 import { isConstructor } from './helpers';
-import {
-  IBind,
-  IContainer,
-  IInjectDescriptor,
-  IResolvedInjection,
-  SyncModule,
-  IToInject,
-  AsyncModule,
-} from './interfaces';
+import { IBind, IContainer, IInjectDescriptor, IResolvedInjection, SyncModule, IToInject, AsyncModule } from './interfaces';
 import { Class, Factory, Constructor } from './types';
+import { EventEmitter } from "events";
 
 /**
  * Dependency injection container implementation
  */
-export class Container implements IContainer {
+export class Container extends EventEmitter implements IContainer {
   /**
    * Handles information about what is registered as what
    * eg. that class IConfiguration should be resolved as DatabaseConfiguration etc.
@@ -50,6 +43,8 @@ export class Container implements IContainer {
   }
 
   constructor(parent?: IContainer) {
+    super();
+
     this.registry = new Map<string, any[]>();
     this.cache = new Map<string, any[]>();
     this.parent = parent || undefined;
@@ -338,8 +333,8 @@ export class Container implements IContainer {
       return deps
         .then(resolvedDependencies => {
           return _resolve(descriptor, targetType, resolvedDependencies);
-        })
-        .then(_setCache);
+        }).then(_setCache)
+
     } else {
       const resInstance = _resolve(descriptor, targetType, deps as IResolvedInjection[]);
       if (resInstance instanceof Promise) {
@@ -350,14 +345,21 @@ export class Container implements IContainer {
       return resInstance;
     }
 
-    function _setCache(r: any) {
+    function _getNameOfResolvedType() {
       const isFactory = !isConstructor(targetType) && _.isFunction(targetType);
-      const checkParent = descriptor.resolver === ResolveType.Singleton;
-      const toCheck = isFactory
+      const name = isFactory
         ? typeof sourceType === 'string'
           ? sourceType
           : (sourceType as any).name
         : targetType.name;
+
+      return name;
+    }
+
+    function _setCache(r: any) {
+
+      const checkParent = descriptor.resolver === ResolveType.Singleton;
+      const toCheck = _getNameOfResolvedType();
 
       if (!self.has(toCheck, checkParent)) {
         self.Cache.set(toCheck, r);
@@ -479,13 +481,16 @@ export class Container implements IContainer {
         if (newInstance instanceof AsyncModule) {
           return new Promise(res => {
             newInstance.resolveAsync(self).then(() => {
+              self.emit(`di.resolved.${_getNameOfResolvedType()}`);
+            }).then(() => {
               res(newInstance);
             });
           });
-        }
-
-        if (newInstance instanceof SyncModule) {
-          newInstance.resolve(self);
+        } else {
+          if (newInstance instanceof SyncModule) {
+            newInstance.resolve(self);
+          }
+          self.emit(`di.resolved.${_getNameOfResolvedType()}`)
         }
       }
 
