@@ -1,5 +1,6 @@
 import { ResolveType } from './enums';
 import { Class, Factory } from './types';
+import { EventEmitter } from "events";
 
 /**
  * Interface to describe DI binding behaviour
@@ -28,7 +29,7 @@ export interface IBind {
   singleInstance(): this;
 }
 
-export interface IContainer {
+export interface IContainer extends EventEmitter {
   Cache: Map<string, any[] | any>;
   Registry: Map<string, any[] | any>;
 

@@ -9,6 +9,63 @@ export namespace DI {
    */
   export const RootContainer: IContainer = new Container();
 
+  /***
+   * EVENT LISTENER STUFF
+   * 
+   * Allows to use event listener stuff on root container
+   */
+
+
+  export function on(event: string, listener: (...args: any) => void) {
+    return RootContainer.on(event, listener);
+  }
+  export function addListener(event: string | symbol, listener: (...args: any[]) => void) {
+    return RootContainer.addListener(event, listener);
+  }
+  export function once(event: string | symbol, listener: (...args: any[]) => void) {
+    return RootContainer.once(event, listener);
+  }
+  export function removeListener(event: string | symbol, listener: (...args: any[]) => void) {
+    return RootContainer.removeListener(event, listener);
+  }
+  export function off(event: string | symbol, listener: (...args: any[]) => void) {
+    return RootContainer.off(event, listener);
+  }
+  export function removeAllListeners(event?: string | symbol) {
+    return RootContainer.removeAllListeners(event);
+  }
+  export function setMaxListeners(n: number) {
+    return RootContainer.setMaxListeners(n);
+  }
+  export function getMaxListeners() {
+    return RootContainer.getMaxListeners();
+  }
+  export function listeners(event: string | symbol) {
+    return RootContainer.listeners(event);
+  }
+  export function rawListeners(event: string | symbol) {
+    return RootContainer.rawListeners(event);
+  }
+  export function emit(event: string | symbol, ...args: any[]) {
+    return RootContainer.emit(event, ...args);
+  }
+  export function listenerCount(type: string | symbol) {
+    return RootContainer.listenerCount(type);
+  }
+  export function prependListener(event: string | symbol, listener: (...args: any[]) => void) {
+    return RootContainer.prependListener(event, listener);
+  }
+  export function prependOnceListener(event: string | symbol, listener: (...args: any[]) => void) {
+    return RootContainer.prependOnceListener(event, listener);
+  }
+  export function eventNames(): Array<string | symbol> {
+    return RootContainer.eventNames();
+  }
+
+  /**
+   * ===========================================================================
+   */
+
   /**
    * Clears root container registry and cache.
    */
