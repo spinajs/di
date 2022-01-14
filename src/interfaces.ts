@@ -100,10 +100,24 @@ export interface IResolvedInjection {
 //     resolveA: (target: any, container: IContainer) => Promise<void>;
 // }
 
-export abstract class SyncModule {
-  public abstract resolve(container: IContainer): void;
+export class Module {
+
+  protected _resolved: boolean = false;
+  public get Resolved(): boolean {
+    return this._resolved;
+  }
 }
 
-export abstract class AsyncModule {
-  public abstract resolveAsync(container: IContainer): Promise<void>;
+export abstract class SyncModule extends Module {
+
+  public resolve(_: IContainer) {
+    this._resolved = true;
+  }
+
+}
+
+export class AsyncModule extends Module {
+  public async resolveAsync(_: IContainer): Promise<void> {
+    this._resolved = true;
+  }
 }
