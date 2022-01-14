@@ -33,6 +33,9 @@ export interface IContainer {
   Registry: Map<string, any[] | any>;
 
   clear(): void;
+  clearRegistry(): void;
+  clearCache(): void;
+
   register<T>(implementation: Class<T> | Factory<T>): IBind;
 
   child(): IContainer;

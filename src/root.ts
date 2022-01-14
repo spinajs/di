@@ -13,9 +13,24 @@ export namespace DI {
    * Clears root container registry and cache.
    */
   export function clear() {
-    RootContainer.clear();
+    RootContainer.clearCache();
+    RootContainer.clearRegistry();
   }
- 
+
+  /**
+   * Clears out root registry ( registered types in root container )
+   */
+  export function clearRegistry() {
+    RootContainer.clearRegistry();
+  }
+
+  /**
+   * Cleart ous root cache ( all resolved types )
+   */
+  export function clearCache() {
+    RootContainer.clearCache();
+  }
+
   /**
    * Register class/interface to DI root container. If 
    * @param type - interface object to register

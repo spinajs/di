@@ -58,13 +58,25 @@ export class Container implements IContainer {
   }
 
   /**
-   * Clears container registry and cache.
+   * Clears container registry and cache. shorthand for container.clearCache() && container.clearRegistry()
    */
   public clear() {
+    this.clearCache();
+  }
+
+  /**
+   * clears container registered types information
+   */
+  public clearCache(): void {
     this.cache.clear();
     this.cache = new Map<string, any[]>();
-    this.registry.clear();
+  }
 
+  /**
+   * Clears container resolved types
+   */
+  public clearRegistry(): void {
+    this.registry.clear();
     this.registerSelf();
   }
 
