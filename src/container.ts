@@ -403,17 +403,20 @@ export class Container extends EventEmitter implements IContainer {
       return descriptor;
 
       function reduce(t: any) {
+        
         if (!t) {
           return;
         }
+
+        reduce(t.prototype);
+        reduce(t.__proto__);
 
         if (t[DI_DESCRIPTION_SYMBOL]) {
           descriptor.inject = descriptor.inject.concat(t[DI_DESCRIPTION_SYMBOL].inject);
           descriptor.resolver = t[DI_DESCRIPTION_SYMBOL].resolver;
         }
 
-        reduce(t.prototype);
-        reduce(t.__proto__);
+     
       }
     }
 

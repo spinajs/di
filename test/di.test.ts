@@ -40,6 +40,31 @@ class BarFar {
 
 BarFar.initialize();
 
+class InhZar {
+
+    @Autoinject()
+    // @ts-ignore
+    public Foo: Foo;
+}
+@NewInstance()
+// @ts-ignore
+class BarFarZar extends InhZar {
+    public static Counter: number;
+    public static initialize() {
+        BarFarZar.Counter = 0;
+    }
+
+    public InstanceCounter = 0;
+    constructor() {
+        super();
+
+        BarFarZar.Counter++;
+        this.InstanceCounter++;
+    }
+}
+
+BarFarZar.initialize();
+
 @PerChildInstance()
 // @ts-ignore
 class Far {
@@ -426,6 +451,28 @@ describe("Dependency injection", () => {
             const single4 = child.resolve<BarFar>(BarFar);
 
             expect(BarFar.Counter).to.eq(4);
+            expect(single3.InstanceCounter).to.eq(1);
+            expect(single4.InstanceCounter).to.eq(1);
+            expect(single3 === single4).to.equal(false);
+            expect(single3 === single).to.equal(false);
+        }
+    })
+
+    it("New instance creation with inheritance", () => {
+        const single = DI.resolve<BarFarZar>(BarFarZar);
+        const single2 = DI.resolve<BarFarZar>(BarFarZar);
+
+        expect(BarFarZar.Counter).to.eq(2);
+        expect(single.InstanceCounter).to.eq(1);
+        expect(single2.InstanceCounter).to.eq(1);
+        expect(single === single2).to.equal(false);
+
+        {
+            const child = DI.child();
+            const single3 = child.resolve<BarFarZar>(BarFarZar);
+            const single4 = child.resolve<BarFarZar>(BarFarZar);
+
+            expect(BarFarZar.Counter).to.eq(4);
             expect(single3.InstanceCounter).to.eq(1);
             expect(single4.InstanceCounter).to.eq(1);
             expect(single3 === single4).to.equal(false);
