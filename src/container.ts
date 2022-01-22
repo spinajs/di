@@ -1,4 +1,4 @@
-import { InvalidArgument, InvalidOperation } from '@spinajs/exceptions';
+import { InvalidArgument } from '@spinajs/exceptions';
 import * as _ from 'lodash';
 import 'reflect-metadata';
 import { TypedArray } from './array';
@@ -8,6 +8,7 @@ import { isConstructor } from './helpers';
 import { IBind, IContainer, IInjectDescriptor, IResolvedInjection, SyncModule, IToInject, AsyncModule } from './interfaces';
 import { Class, Factory, Constructor } from './types';
 import { EventEmitter } from "events";
+import { ResolveException } from './exceptions';
 
 /**
  * Dependency injection container implementation
@@ -314,7 +315,7 @@ export class Container extends EventEmitter implements IContainer {
   private resolveArrayType<T>(sourceType: Class<T> | string, targetType: Class<T> | Factory<T>, options?: any[]): Promise<T> | T {
     const tname = typeof sourceType === 'string' ? sourceType : sourceType.name;
     if (!this.Registry.has(tname)) {
-      throw new InvalidOperation(`Cannot resolve array of type ${tname}, no types are registered in container.`);
+      throw new ResolveException(`Cannot resolve array of type ${tname}, no types are registered in container.`);
     }
 
     return this.resolveType(sourceType, targetType, options);

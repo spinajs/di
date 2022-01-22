@@ -6,3 +6,4 @@ export * from './types';
 export * from './helpers';
 export * from './container';
 export * from './root';
+export * from './exceptions';
