@@ -133,6 +133,11 @@ export class Container extends EventEmitter implements IContainer {
 
   /**
    * Gets already resolved services. Works only for singleton classes.
+   * 
+   * Do not try to get service by factory func, it will always return null.
+   * If you somehowe want to cache instances created by factory functions,
+   * factory itself should do that somehow and end user should always resolve by
+   * assigned type
    *
    * @param serviceName - name of service to get
    * @returns { null | T} - null if no service has been resolved at given name
@@ -156,13 +161,25 @@ export class Container extends EventEmitter implements IContainer {
       return _get(identifier);
     }
 
+    /**
+     * When we try to get type by factory func, always return null
+     * It's technically an arror becouse factory func in in charge now
+     * of managing intances of created objects (eg. creating cache)
+     * 
+     * We do not track of any instances created by factory funcions.
+     */
+    const isFactory = !isConstructor(identifier[identifier.length - 1]) && _.isFunction(identifier[identifier.length - 1]);
+    if (isFactory) {
+      return null;
+    }
+
+
     if (service instanceof TypedArray) {
       return (identifier as Array<Class<T>>).map(t => _get(t.name));
     }
 
-    const isFactory = !isConstructor(identifier[identifier.length - 1]) && _.isFunction(identifier[identifier.length - 1]);
 
-    return _get(isFactory ? (typeof service === 'string' ? service : service.name) : (identifier[identifier.length - 1] as any).name);
+    return _get((identifier[identifier.length - 1] as any).name);
 
     function _get(i: string) {
       if (self.cache.has(i)) {
@@ -326,10 +343,17 @@ export class Container extends EventEmitter implements IContainer {
     const descriptor = _extractDescriptor<T>(targetType);
     const isFactory = !isConstructor(targetType) && _.isFunction(targetType);
 
+    /**
+     * If its a factory func, always resolve as new instance
+     */
+    if (isFactory) {
+      return _getNewInstance(targetType);
+    }
+
     // check cache if needed
     if (descriptor.resolver === ResolveType.Singleton || descriptor.resolver === ResolveType.PerChildContainer) {
-      if (this.has(isFactory ? sourceType : targetType, descriptor.resolver === ResolveType.Singleton)) {
-        return this.get(isFactory ? sourceType : targetType);
+      if (this.has(targetType, descriptor.resolver === ResolveType.Singleton)) {
+        return this.get(targetType);
       }
     }
 
@@ -352,14 +376,7 @@ export class Container extends EventEmitter implements IContainer {
     }
 
     function _getNameOfResolvedType() {
-      const isFactory = !isConstructor(targetType) && _.isFunction(targetType);
-      const name = isFactory
-        ? typeof sourceType === 'string'
-          ? sourceType
-          : (sourceType as any).name
-        : targetType.name;
-
-      return name;
+      return targetType.name;
     }
 
     function _setCache(r: any) {

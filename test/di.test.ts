@@ -655,23 +655,26 @@ describe("Dependency injection", () => {
         expect(instance.constructor.name).to.eq("DatabaseImpl");
     })
 
-    it("Should resolve from factory as singleton", () => {
+    it("Should resolve from factory as different objects", () => {
         class IDatabase { }
 
         class DatabaseImpl implements IDatabase { }
 
-        DI.register((container: Container) => {
+         
+        const factory = (container: Container) => {
             expect(container).to.be.not.null;
             expect(container.constructor.name).to.eq("Container");
             return new DatabaseImpl();
-        }).as(IDatabase);
+        }
+
+        DI.register(factory).as(IDatabase);
 
         const instance = DI.resolve<IDatabase>(IDatabase);
         const instance2 = DI.resolve<IDatabase>(IDatabase);
 
         expect(instance).to.be.not.null;
         expect(instance.constructor.name).to.eq("DatabaseImpl");
-        expect(instance2 === instance).to.be.true;
+        expect(instance2 !== instance).to.be.true;
     })
 
     it("Should inject options at resolve", () => {
