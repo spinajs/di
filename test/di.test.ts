@@ -1,4 +1,4 @@
-import { InvalidArgument } from '@spinajs/exceptions'
+import { InvalidArgument, InvalidOperation } from '@spinajs/exceptions'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
@@ -6,6 +6,11 @@ import { AsyncModule, Autoinject, Container, DI, Inject, Injectable, LazyInject,
 
 const expect = chai.expect;
 chai.use(chaiAsPromised);
+
+class NoRegisteredType
+{
+
+}
 
 @Singleton()
 // @ts-ignore
@@ -766,6 +771,10 @@ describe("Dependency injection", () => {
         expect(getted).to.be.an("array").that.have.length(2);
         expect(getted[0]).to.be.instanceOf(InjectableTest);
         expect(getted[1]).to.be.instanceOf(InjectableTest2);
+    })
+
+    it("Should throw when trying to resolve array type", () =>{ 
+        expect( () => DI.resolve(Array.ofType(NoRegisteredType))).to.throw(InvalidOperation);
     })
 
     it("Should @Inject should resolve all implementations", () => {

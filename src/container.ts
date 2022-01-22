@@ -1,4 +1,4 @@
-import { InvalidArgument } from '@spinajs/exceptions';
+import { InvalidArgument, InvalidOperation } from '@spinajs/exceptions';
 import * as _ from 'lodash';
 import 'reflect-metadata';
 import { TypedArray } from './array';
@@ -300,7 +300,7 @@ export class Container extends EventEmitter implements IContainer {
     }
 
     if (isArray) {
-      const resolved = targetType.map(r => this.resolveType(sourceType, r, opt));
+      const resolved = targetType.map(r => this.resolveArrayType(sourceType, r, opt));
       if (resolved.some(r => r instanceof Promise)) {
         return Promise.all(resolved) as Promise<T[]>;
       }
@@ -311,11 +311,16 @@ export class Container extends EventEmitter implements IContainer {
     return this.resolveType(sourceType, targetType[targetType.length - 1], opt);
   }
 
-  private resolveType<T>(
-    sourceType: Class<T> | string,
-    targetType: Class<T> | Factory<T>,
-    options?: any[],
-  ): Promise<T> | T {
+  private resolveArrayType<T>(sourceType: Class<T> | string, targetType: Class<T> | Factory<T>, options?: any[]): Promise<T> | T {
+    const tname = typeof sourceType === 'string' ? sourceType : sourceType.name;
+    if (!this.Registry.has(tname)) {
+      throw new InvalidOperation(`Cannot resolve array of type ${tname}, no types are registered in container.`);
+    }
+
+    return this.resolveType(sourceType, targetType, options);
+  }
+
+  private resolveType<T>(sourceType: Class<T> | string, targetType: Class<T> | Factory<T>, options?: any[]): Promise<T> | T {
     const self = this;
     const descriptor = _extractDescriptor<T>(targetType);
     const isFactory = !isConstructor(targetType) && _.isFunction(targetType);
@@ -403,7 +408,7 @@ export class Container extends EventEmitter implements IContainer {
       return descriptor;
 
       function reduce(t: any) {
-        
+
         if (!t) {
           return;
         }
@@ -416,7 +421,7 @@ export class Container extends EventEmitter implements IContainer {
           descriptor.resolver = t[DI_DESCRIPTION_SYMBOL].resolver;
         }
 
-     
+
       }
     }
 
